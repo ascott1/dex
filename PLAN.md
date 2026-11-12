@@ -446,6 +446,11 @@ export type SyncMessage =
   | { type: 'marks'; slideId: string; marks: SlideMarks }
   | { type: 'theme'; theme: ThemeName }
   | { type: 'blackout'; on: boolean };
+
+// Custom HMR events the dev server sends (dev only; see §7 "Server contract").
+export interface DexUpdateEvent { slug: string }                                      // `dex:update`
+export interface DexErrorEvent { slug: string; error: string; line: number | null }   // `dex:error`; `line` is 1-based in deck.md
+export interface DexIndexEvent { slugs: string[] }                                    // `dex:index`; sorted
 ```
 
 The theme a user toggles is stored per deck in `localStorage` under `dex:theme:<slug>` and overrides the frontmatter. Everything in `Settings` is global, stored under `dex:settings`.
@@ -606,6 +611,31 @@ Phase 3 builds this skeleton with every component present. Components owned by l
 - **Slides rendered**: previous, current, and next. Only the current one is visible; the others are `visibility: hidden` so their images are already loaded. The transition is a CSS opacity change on a `.current` class.
 - **Builds**: after the HTML is in the DOM, an effect toggles the class `is-pending` on every `[data-step]` element whose step is greater than the current step. Pending elements keep their space (`opacity: 0`), so nothing reflows. When `settings.builds` is off, nothing is pending.
 - **Auto-fit**: after the HTML is in the DOM, after `document.fonts.ready`, and after each image in the slide loads: if `.s-main` has `scrollHeight > clientHeight + 1`, set `data-density="1"` on the slide; if still overflowing, `"2"`; if still overflowing, set `data-overflow` and log a console warning naming the slide. Skip for `figure`, `gallery`, `image`, `full`.
+
+### Server contract (built in Phase 2)
+
+What the browser can rely on. URLs are relative to the page.
+
+| Request | Response |
+|---|---|
+| `GET decks/index.json` | `DeckSummary[]`, newest first. A deck that fails to compile is still listed, with its slug as the title and `slides: 0`. |
+| `GET decks/<slug>/deck.json` | 200 with the `Deck`. 500 with `{ error, line }` when the frontmatter is invalid. 404 with `{ error }` when there is no such deck. |
+| `GET decks/<slug>/marks.json` | The saved `Marks`, or 404 when nothing has been saved yet. A plain static file. |
+| `PUT /__dex/marks/<slug>` (dev only) | 204 on success. 400 for a bad slug or a body that is not `{ version: 1, slides: {…} }`. 404 when the deck does not exist. 413 over 5 MB. |
+
+Dev-only events, received with `import.meta.hot.on(name, callback)`. The payload types are in `shared/types.ts`.
+
+| Event | Payload | Sent when |
+|---|---|---|
+| `dex:update` | `{ slug }` | A `deck.md` was added or changed and compiled, or was removed (its `deck.json` then returns 404). |
+| `dex:error` | `{ slug, error, line }` | A `deck.md` changed and failed to compile. `line` is 1-based, or `null`. |
+| `dex:index` | `{ slugs }` | A deck was added or removed. Not sent on edits. |
+
+In a static build the same GET URLs are real files, and there is no PUT endpoint and no events.
+
+An editor that saves by renaming can produce a remove followed by an add, so a fetch made between the two may return 404. On a 404 that follows `dex:update`, keep the deck that is showing and refetch once after 200ms.
+
+Vite's own host check and CORS rules run before these endpoints (verified: a request with a foreign `Host` gets 403, and a cross-origin preflight gets no allow-origin header), so they need no checks of their own.
 
 ### State (`src/state/*.svelte.ts`)
 
@@ -950,7 +980,7 @@ Tasks:
 5. `commands.ts` and `keys.ts` with the full table from §7. Implement the Phase 3 commands; the rest are registered with empty `run` functions.
 6. `settings` and `ui` state with every field from §5 and §7, persisted where specified.
 7. `TopBar`, `BottomBar`, `Icon`, progress line, chrome auto-hide, fullscreen (`f`, and the top-bar button), theme toggle, effective theme on `<html>`.
-8. Live reload: `import.meta.hot.on('dex:update', …)` refetches the deck and keeps the current slide by `id` when it still exists, otherwise clamps the index. With `settings.followEdits` on, jump to the first slide whose `hash` changed. `dex:error` shows `ErrorOverlay` (a mono `--red` line at the bottom-left with the message and line, dismissible) and keeps the last good deck.
+8. Live reload, per the server contract in §7: `import.meta.hot.on('dex:update', …)` refetches the deck (and the deck index refetches on both `dex:update` and `dex:index`) and keeps the current slide by `id` when it still exists, otherwise clamps the index. With `settings.followEdits` on, jump to the first slide whose `hash` changed. `dex:error` shows `ErrorOverlay` (a mono `--red` line at the bottom-left with the message and line, dismissible) and keeps the last good deck.
 9. Create every remaining component from the §7 skeleton as a stub, and mount them in `App.svelte`.
 10. Basic slide CSS in `slide.css`: safe-area padding, the type roles from §8 for headings and body, `is-pending`, the `.current` fade. Enough to read the demo deck.
 11. `playwright.config.ts` with a `webServer` that runs the dev server on a fixed port, Chromium only, viewport 1600×900. The `webServer` command is `vite --port <port> --strictPort`, not `pnpm start`, so no browser tab opens on the owner's machine. On a machine or worktree where Chromium is not installed yet, run `pnpm exec playwright install chromium` once. `e2e/smoke.spec.ts` covering the acceptance list.
@@ -1208,4 +1238,5 @@ Executors: add a line here whenever the implementation differs from this plan. F
 - Phase 2 — the deck cache is keyed by `deck.md`'s mtime and size and checked on every request as well as on watcher events, so a request never gets a stale deck when it arrives before the watcher event, and each version of the file is compiled (and its warnings printed) once.
 - Phase 2 — responses the plan did not specify: `deck.json` for an unknown deck or invalid slug → 404 `{ error }`; a deck that fails to compile is still listed in `index.json` with `title` = slug and `slides: 0`. The marks endpoint answers 405 to anything but `PUT`, 404 when `decks/<slug>/deck.md` does not exist (it never creates folders), 400 when the body is not JSON or not `{ version: 1, slides: {…} }`, and 413 over 5 MB (after draining the body, because answering mid-upload makes the client see a connection reset instead). It writes through a dotfile temp file and `rename`, so a crash never leaves half a `marks.json`.
 - Phase 2 — the build skips dotfiles in deck folders (`.DS_Store`, the marks temp file) as well as `deck.md`.
+- Phase 2 (follow-up by the planner) — the three event payload types moved from `engine/vite-plugin.ts` to `shared/types.ts` and §5, because browser code may not import from `engine/`; the plugin re-exports them. §7 gained a "Server contract" section recording the endpoints, status codes, and events Phase 2 built.
 - Phase 2 — the starter template lives in `engine/scripts/template.mjs` (with `template.d.mts` so a test can import it under `tsc`); a test compiles it and asserts zero warnings. `pnpm new` writes under the current directory (the project root under pnpm, as `start.mjs` already assumes) and also creates an empty `media/`. The template's top comment points to `README.md`, which Phase 10 writes; it is the title slide's speaker note, since a comment above the frontmatter would stop it being frontmatter. The split slide has no image until the author adds one, so it compiles as `default`.

@@ -94,3 +94,8 @@ export type SyncMessage =
   | { type: 'marks'; slideId: string; marks: SlideMarks }
   | { type: 'theme'; theme: ThemeName }
   | { type: 'blackout'; on: boolean };
+
+// Custom HMR events the dev server sends (dev only; see §7 "Server contract").
+export interface DexUpdateEvent { slug: string }                                      // `dex:update`
+export interface DexErrorEvent { slug: string; error: string; line: number | null }   // `dex:error`; `line` is 1-based in deck.md
+export interface DexIndexEvent { slugs: string[] }                                    // `dex:index`; sorted

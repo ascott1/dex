@@ -5,7 +5,7 @@ import { readFile, readdir, rename, stat, writeFile } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
 import type { Logger, Plugin, ResolvedConfig, ViteDevServer } from 'vite';
-import type { Deck, DeckSummary } from '../shared/types.ts';
+import type { Deck, DeckSummary, DexErrorEvent, DexIndexEvent, DexUpdateEvent } from '../shared/types.ts';
 import { compileDeck, DexCompileError } from './compiler/index.ts';
 
 export const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
@@ -21,12 +21,9 @@ export interface DexOptions {
   dir?: string;
 }
 
-/** Payload of the `dex:update` custom HMR event: a deck.md was added, changed, or removed. */
-export interface DexUpdateEvent { slug: string }
-/** Payload of `dex:error`: a deck failed to compile. `line` is 1-based in deck.md, or null. */
-export interface DexErrorEvent { slug: string; error: string; line: number | null }
-/** Payload of `dex:index`: the set of decks changed. `slugs` is sorted. */
-export interface DexIndexEvent { slugs: string[] }
+// The payloads of the `dex:update`, `dex:error`, and `dex:index` events live in shared/types.ts,
+// because browser code may not import from engine/.
+export type { DexErrorEvent, DexIndexEvent, DexUpdateEvent } from '../shared/types.ts';
 
 type CompileResult =
   | { ok: true; deck: Deck; modified: Date }
