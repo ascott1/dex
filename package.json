@@ -1,0 +1,45 @@
+{
+  "name": "dex",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "start": "node engine/scripts/start.mjs",
+    "new": "node engine/scripts/new.mjs",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "shots": "playwright test e2e/shots.spec.ts"
+  },
+  "devDependencies": {
+    "@fontsource-variable/dm-sans": "^5.3.0",
+    "@fontsource/dm-mono": "^5.3.0",
+    "@playwright/test": "^1.65.0",
+    "@shikijs/rehype": "^4.6.0",
+    "@shikijs/transformers": "^4.6.0",
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
+    "github-slugger": "^2.0.0",
+    "mdast-util-to-string": "^4.0.0",
+    "perfect-freehand": "^1.2.0",
+    "rehype-raw": "^7.0.0",
+    "rehype-stringify": "^10.0.0",
+    "remark-gfm": "^4.0.0",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.0.0",
+    "shiki": "^4.6.0",
+    "svelte": "^5.57.0",
+    "svelte-check": "^4.7.0",
+    "typescript": "^6.0.3",
+    "unified": "^11.0.0",
+    "unist-util-visit": "^5.0.0",
+    "vite": "^8.3.0",
+    "vitest": "^5.1.0",
+    "yaml": "^2.9.0"
+  }
+}

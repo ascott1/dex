@@ -1,0 +1,66 @@
+:root {
+  --font-sans: 'DM Sans Variable', 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --t-fast: 120ms;
+  --t-med: 200ms;
+  --t-slow: 260ms;
+  --bar-top: 50px;
+  --bar-bottom: 46px;
+  --note-yellow: #ffe76a;
+  --note-pink: #ffc4d0;
+  --note-blue: #bfe0ff;
+  --note-ink: #0f1413;
+}
+
+[data-theme='paper'] {
+  color-scheme: light;
+  --bg: #ebf6f4;          /* sampled from the reference: pale mint-white; never white, never cream */
+  --ink: #0f1413;         /* sampled */
+  --ink-2: #485653;       /* secondary text; sampled from the reference's tool labels */
+  --ink-3: #6e7b78;       /* chrome labels only, about 4:1 on --bg; never slide body text */
+  --ink-4: #a3b0ad;       /* idle and disabled chrome affordances only */
+  --line: #d8e3e1;        /* hairlines and control borders; sampled */
+  --fill: #0f1413;        /* selected segment */
+  --on-fill: #ebf6f4;
+  --tint: rgb(15 20 19 / 0.05);
+  --scrim: rgb(235 246 244 / 0.9);
+  --red: #e04e2b;         /* orange-red: draw-mode accent and a pen color */
+  --blue: #2b62e3;
+  --marker: #ffd84a;
+  --code-string: #2c6b5b;
+  --code-const: #9a4a22;
+}
+
+[data-theme='ink'] {
+  color-scheme: dark;
+  --bg: #0d1211;
+  --ink: #e6f2ef;
+  --ink-2: #a6b5b1;
+  --ink-3: #74827f;
+  --ink-4: #46524f;
+  --line: #232d2b;
+  --fill: #e6f2ef;
+  --on-fill: #0d1211;
+  --tint: rgb(230 242 239 / 0.07);
+  --scrim: rgb(13 18 17 / 0.9);
+  --red: #ff6f52;
+  --blue: #7da2ff;
+  --marker: #ffd84a;
+  --code-string: #8fd1bd;
+  --code-const: #f0a57c;
+}
+
+[data-theme] {
+  --shiki-foreground: var(--ink);
+  --shiki-background: transparent;
+  --shiki-token-keyword: var(--ink);
+  --shiki-token-function: var(--ink);
+  --shiki-token-parameter: var(--ink);
+  --shiki-token-punctuation: var(--ink-2);
+  --shiki-token-comment: var(--ink-3);
+  --shiki-token-string: var(--code-string);
+  --shiki-token-string-expression: var(--code-string);
+  --shiki-token-constant: var(--code-const);
+  --shiki-token-link: var(--blue);
+}
