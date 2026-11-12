@@ -667,7 +667,7 @@ Navigation rules:
 
 ### Commands and keys (`lib/commands.ts`, `lib/keys.ts`)
 
-One registry: `{ id, title, keys: string[], run(): void, when?(): boolean }`. `keys.ts` maps `keydown` to commands. The key list in the settings sheet is generated from the registry. Phase 3 registers every command below; commands owned by later phases start with an empty `run`.
+One registry: `{ id, title, keys: string[], run(): void, when?(): boolean }`. `keys.ts` maps `keydown` to commands. The key list in the settings sheet is generated from the registry. Phase 3 registers every command below; commands owned by later phases start with an empty `run`. A later phase fills its stubs by calling `implement(id, run, when?)` from its own module, without editing `commands.ts`.
 
 | Keys | Command | Phase |
 |---|---|---|
@@ -1006,12 +1006,13 @@ Gotchas: wait for `document.fonts.ready` before measuring. Use `history.replaceS
 
 Tasks:
 
-1. `slide.css`: all content elements from §8. Footnotes (`section.footnotes`) are a sibling of `.s-main`, not inside it, so position them against the slide. Add a visually-hidden `.sr-only` rule; the footnotes heading uses it.
+1. `slide.css`: all content elements from §8. Footnotes (`section.footnotes`) are a sibling of `.s-main`, not inside it, so position them against the slide. Add a visually-hidden `.sr-only` rule; the footnotes heading uses it. For the dev-only `OVERFLOW` label, have `App.svelte` set `data-dev` on `.app` when `import.meta.env.DEV`, and draw the label with `.app[data-dev] .slide[data-overflow]::after`.
 2. `layouts.css`: one block per `data-layout`, per the geometry table. Derive every position from `--W`, `--H`, and the margin variables so 16:10 and 4:3 also work.
-3. `code.css`: code blocks, line highlighting, inline code.
+3. `code.css`: code blocks, line highlighting, inline code. Shiki writes `background-color: var(--shiki-background)` inline on every `pre`, which beats a stylesheet `background`; set `--shiki-background` on `pre.shiki` instead.
 4. Density and text-scale variables wired into every font size.
-5. `e2e/shots.spec.ts` (run by `pnpm shots`): for the demo deck, screenshot the stage for every slide in Paper and Ink at 1600×900 with builds fully revealed, into `docs/shots/<theme>/<nn>-<id>.png`. Also three slides at `quiet` and `loud`.
-6. Review loop: run `pnpm shots`, open every image, fix, repeat. Compare, at the Quiet text size, the title slide with `docs/reference/maeda-title.png` and a default slide with `docs/reference/maeda-draw.png`, using the reference measurements in §8.
+5. `e2e/shots.spec.ts` (run by `pnpm shots`): for the demo deck, screenshot the stage for every slide in Paper and Ink at 1600×900 with builds fully revealed, into `docs/shots/<theme>/<nn>-<id>.png`. Also three slides at `quiet` and `loud`. Keep this spec out of `pnpm test:e2e` (a `testIgnore` in the default run, or its own Playwright project), so the smoke tests stay fast and `pnpm shots` is the only thing that writes to `docs/shots/`.
+6. Chrome over background images. On a `bg` image slide the chrome sits on the picture and its labels disappear (seen in Phase 3 with the demo's light image). Raise the scrim to `rgb(0 0 0 / 0.55)`. When the current slide has `data-bg="image"`, set `data-over-image` on `.app` and step the chrome labels up one level there (`--ink-3` → `--ink-2`, `--ink-4` → `--ink-3`); the hairlines stay.
+7. Review loop: run `pnpm shots`, open every image, fix, repeat. Compare, at the Quiet text size, the title slide with `docs/reference/maeda-title.png` and a default slide with `docs/reference/maeda-draw.png`, using the reference measurements in §8.
 
 Acceptance:
 
@@ -1045,7 +1046,7 @@ Tasks:
    | DECK | Info rows: deck (a `<select>` of all decks; changing it navigates), slides, source path. Buttons `PRESENTER` and `PRINT / PDF` (wired in Phases 8 and 9). |
 
 3. `Overview.svelte` (`g` or the overview icon): a full-window overlay on `--bg`. A grid of thumbnails, `repeat(auto-fill, minmax(260px, 1fr))`, gap 24. Each thumbnail is a real `SlideView` with `revealAll`, scaled by CSS transform inside a box with the stage's aspect ratio and a 1px `--line` border, `inert`, with `content-visibility: auto`. Under it, a Label: the zero-padded number and the title. The current slide has an `--ink` border. Skipped slides are at 40% opacity with a `SKIP` Label. Arrow keys move the selection, `Enter` or click opens the slide, `g` or `Esc` closes. Opening scrolls the current slide into view.
-4. Go to slide: typing digits shows them as a Label in the bottom bar (`GO TO 12`); `Enter` jumps; `Esc` or 1.5s of no input cancels.
+4. Go to slide: typing digits shows them as a Label in the bottom bar (`GO TO 12`); `Enter` jumps; `Esc` or 1.5s of no input cancels. `0` is also zoom reset (Phase 7), so a `0` typed with no digits buffered is not a go-to digit; the `goto` command's `when` claims digits and `Enter` only in the cases that belong to it.
 5. `SourceView.svelte` (`m`): replaces the stage content with the current slide's `source` in DM Mono, 22 logical px, inside the safe area, with a `MARKDOWN` Label above it. Navigation still works.
 6. `Esc` ordering per §7.
 
@@ -1085,7 +1086,7 @@ Sticky notes (`NotesLayer.svelte`, `StickyNote.svelte`):
 - Editing: a `<textarea>` filling the note. `Esc` or clicking outside finishes. An empty note is removed when editing ends.
 - Notes are inside `.camera`, so they scale and zoom with the slide.
 
-Laser (`Laser.svelte`): `l` toggles. A 14px `--red` dot follows the pointer with a short fading trail (the last 12 positions). Nothing is stored. The system cursor is hidden while it is on.
+Laser (`Laser.svelte`): `l` toggles. A 14px `--red` dot follows the pointer with a short fading trail (the last 12 positions). Nothing is stored. The system cursor is hidden while it is on. `Laser` is mounted outside `.camera`, so position it from the pointer's offset within `.stage` divided by the stage scale, not from `clientToStage` (which returns camera-space coordinates and would drift once zoom exists).
 
 Also: `a` and the MARKS setting hide or show both layers. Wire `CLEAR THIS SLIDE` and `CLEAR ALL` in the settings sheet (`CLEAR ALL` asks for a second click on a `CONFIRM` state). The overview shows a small solid square next to the number of any slide that has marks.
 
@@ -1240,6 +1241,7 @@ Executors: add a line here whenever the implementation differs from this plan. F
 - Phase 2 — the build skips dotfiles in deck folders (`.DS_Store`, the marks temp file) as well as `deck.md`.
 - Phase 2 (follow-up by the planner) — the three event payload types moved from `engine/vite-plugin.ts` to `shared/types.ts` and §5, because browser code may not import from `engine/`; the plugin re-exports them. §7 gained a "Server contract" section recording the endpoints, status codes, and events Phase 2 built.
 - Phase 2 — the starter template lives in `engine/scripts/template.mjs` (with `template.d.mts` so a test can import it under `tsc`); a test compiles it and asserts zero warnings. `pnpm new` writes under the current directory (the project root under pnpm, as `start.mjs` already assumes) and also creates an empty `media/`. The template's top comment points to `README.md`, which Phase 10 writes; it is the title slide's speaker note, since a comment above the frontmatter would stop it being frontmatter. The split slide has no image until the author adds one, so it compiles as `default`.
+- Phase 3 (follow-up by the planner) — review found no defects. Notes for later phases were added from what Phase 3 turned up: the `implement()` helper (§7), Shiki's inline background and the dev marker for the overflow label (Phase 4), chrome legibility over background images (Phase 4, with the decision made), keeping the screenshot spec out of the smoke run (Phase 4), the `0` key shared by go-to and zoom reset (Phase 5), and the laser's coordinate space (Phase 6).
 - Phase 3 — route state lives in `App.svelte`; `lib/router.ts` is pure functions (`parseHash`, `formatRoute`, `replaceHash`, `onHashChange`), because runes only work in `.svelte.ts` modules. Hashes that do not start with `#/` are ignored, and in-slide `#…` links (footnote references) are prevented from navigating, since they would replace the route. The presenter and print routes render inside `.app` in place of the deck skeleton.
 - Phase 3 — state beyond the §7 table: `deck` has `slug` (the slug the route asked for), `listLoaded`, and `errorLine`; `deck.error` holds both load failures and `dex:error` messages (ErrorOverlay shows it while a deck is showing; with no deck, a centered `CANNOT OPEN DECK` message shows it). `ui` has `warnings` (Phase 3: the warnings list is open), `editing` (Phase 6: id of the note being edited, used by the `Esc` order), and `goto` (Phase 5: digits typed). `settings.svelte.ts` also exports `deckTheme`, `loadDeckTheme`, `setDeckTheme`, `baseTheme()`, and `slideTheme(slide)`; `nav.svelte.ts` exports `show(i, step)`, `nextShown`, and `prevShown`. `marks.svelte.ts` and `sync.ts` are stubs for Phases 6 and 8.
 - Phase 3 — the command registry: `Command` also has `phase` and `repeat` (whether holding the key repeats it; navigation and zoom in/out only), and `run`/`when` receive the `KeyboardEvent`. Keys are normalized strings (`ArrowRight`, `Space`, `Shift+Space`, `t`, `Mod+z`, `Shift+Mod+z`, `+`); `Mod` is ⌘ or Ctrl, Shift is part of the name only for letters and named keys, and a key with an unregistered modifier (⌘R, ⌘L) is never captured. The first command whose keys match and whose `when` passes runs. `implement(id, run, when)` lets a later phase fill a stub from its own module. `goto` is registered with the ten digits and `Enter` and `when: () => false`, before the zoom commands: `0` is both a digit and zoom reset, so Phase 5's `when` should claim `0` only while digits are being typed. `keyLabel()` formats keys for the Phase 5 key list. Enter and Space on a focused button or link are left to the button, and chrome buttons cancel `pointerdown` so a mouse click does not leave focus on them (otherwise the next Space would press the button again).
