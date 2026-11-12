@@ -176,7 +176,7 @@ These were run against the versions above. Build on them without re-deriving.
 - The bullet character of a list is `source.charAt(list.children[0].position.start.offset)`. mdast does not store it.
 - With `allowDangerousHtml: true` plus `rehype-raw`, raw HTML in Markdown comes through as real elements. HTML comments arrive as root-level `html` nodes whose `value` starts with `<!--`.
 - GFM footnotes render as `<section data-footnotes class="footnotes">` at the end of the root.
-- Shiki 4: `createCssVariablesTheme` and `createHighlighter` are exported from `shiki`. `@shikijs/rehype/core` default-exports a plugin called as `.use(plugin, highlighter, { theme, transformers, fallbackLanguage: 'text' })`. `transformerMetaHighlight()` turns ` ```ts {2} ` into `class="line highlighted"`. Token colors are emitted as `var(--shiki-token-keyword)` and similar.
+- Shiki 4: `createCssVariablesTheme` and `createHighlighter` are exported from `shiki`. `@shikijs/rehype/core` default-exports a plugin called as `.use(plugin, highlighter, { theme, transformers, fallbackLanguage: 'text' })`. `transformerMetaHighlight()` turns ` ```ts {2} ` into `class="line highlighted"` (the spike had no `rehype-raw` in the pipeline; with it, the fence meta must first be copied to `hProperties.metastring`, see §6). Token colors are emitted as `var(--shiki-token-keyword)` and similar.
 - Vite 8: middleware added in `configureServer` runs before Vite's own static serving. Vite serves any file under the project root in dev, so `decks/<slug>/media/x.png` needs no extra middleware. `handleHotUpdate` fires when `deck.md` changes, and returning `[]` suppresses the default reload. `server.hot.send(event, data)` exists.
 - `perfect-freehand` exports `getStroke`.
 - Font CSS entry points: `@fontsource-variable/dm-sans/opsz.css` and `opsz-italic.css` (weight and optical-size axes), `@fontsource/dm-mono/400.css`, `500.css`, `400-italic.css`.
@@ -267,9 +267,11 @@ That file produces a title slide, a bullet slide that builds one item at a time,
 | `transition` | `fade`, `none` | `fade` |
 | `lang` | language tag | `en` |
 
+The block between the first two `---` lines is frontmatter only if it is a `key: value` map. A deck may also simply begin with a `---` slide break.
+
 ### Slides
 
-- A line containing only `---` starts a new slide. It always means a slide break, even directly under a line of text. It is ignored inside fenced code blocks.
+- A line containing only `---` starts a new slide. It always means a slide break, even directly under a line of text. It is ignored inside fenced code blocks, but not inside an HTML comment: keep `---` out of speaker notes. The compiler warns when a comment is left unclosed on a slide.
 - Slide content is CommonMark plus GFM (tables, strikethrough, task lists, footnotes) plus raw HTML.
 - Footnotes and link reference definitions must be on the slide that uses them.
 
@@ -279,7 +281,7 @@ That file produces a title slide, a bullet slide that builds one item at a time,
 |---|---|
 | `#` | Display heading. A slide with only `#` and up to two paragraphs is a title slide. `#` alone (not on slide 1) is a section divider. |
 | `##` | Slide title |
-| `###` | Column heading (two or more on a slide make columns), otherwise a subheading |
+| `###` | Column heading (two to six on a slide make columns), otherwise a subheading |
 | `####` | Small subheading |
 | `######` | Eyebrow: a small uppercase mono label, usually placed above the heading |
 
@@ -296,8 +298,8 @@ Layout is chosen from the slide's content. A `layout` directive overrides it.
 | Only one image | `image` — full-bleed |
 | A heading and one image, nothing else | `figure` — title on top, image fills the rest |
 | One image plus other content | `split` — image on the left if it comes first in the source, otherwise on the right |
-| Only images (two or more), optional heading | `gallery` |
-| Two or more `###` headings | `columns` — one column per `###` |
+| Only images (two or more), with an optional `#` or `##` heading | `gallery` |
+| Two to six `###` headings | `columns` — one column per `###` |
 | A line containing only `\|\|\|` | `columns` — split at each `\|\|\|` |
 | Anything else | `default` — title on top, content below |
 
@@ -305,7 +307,7 @@ Layout is chosen from the slide's content. A `layout` directive overrides it.
 
 - A list written with `+` bullets reveals one item per step. `-` and `*` lists appear all at once.
 - `build: true` in the frontmatter or in a slide directive makes every top-level list on the slide build, whatever the bullet. `build: false` on a slide turns builds off for that slide.
-- A paragraph containing only `. . .` is a pause: everything after it on the slide waits for the next step.
+- A line containing only `. . .` is a pause: everything after it on the slide waits for the next step. A building list right after a pause shows its first item on that step.
 - Nested list items appear with their parent.
 
 ### Comments: directives and speaker notes
@@ -332,7 +334,7 @@ An HTML comment is a **directive** if every `key: value` pair in it uses a key f
 | `skip` | `true` | Leave the slide out when presenting; it stays in the overview, dimmed |
 | `transition` | `fade`, `none` | Transition into this slide |
 
-A comment that looks like a directive but has an unknown key is treated as a note, and the compiler warns.
+A comment with an unknown key is kept as a note. The compiler warns only when it was clearly meant as a directive: the key is a near miss for a real one (`layuot`), or unknown keys are mixed with real ones. A note such as `todo: fix this` produces no warning.
 
 ### Media
 
@@ -385,7 +387,7 @@ export interface Slide {
   title: string | null;
   layout: LayoutName;
   html: string;           // inner HTML of the slide element (§6 HTML contract)
-  attrs: Record<string, string>;   // data-* attributes for the slide element
+  attrs: Record<string, string>;   // data-* attributes for the slide element, plus `style` when the slide has a `bg`
   notes: string;          // speaker notes as HTML, '' when none
   steps: number;          // number of build steps, 0 when none
   options: SlideOptions;
@@ -394,6 +396,7 @@ export interface Slide {
   hash: string;           // changes when the slide's rendered output would change
 }
 
+// `slide` is the 0-based slide index, or -1 for frontmatter. `line` is 1-based in deck.md.
 export interface CompileWarning { slide: number; line: number; message: string }
 
 export interface Deck {
@@ -456,16 +459,16 @@ The theme a user toggles is stored per deck in `localStorage` under `dex:theme:<
 ### Pipeline
 
 1. **Normalize** line endings to `\n`.
-2. **Frontmatter** (`frontmatter.ts`). If the source starts with `---\n`, take everything up to the next line that is exactly `---` and parse it with `yaml`. Validate against `DeckMeta`; an unknown key or bad value is a warning and the default is used. Keep count of the consumed lines so `Slide.line` stays correct.
+2. **Frontmatter** (`frontmatter.ts`). If the source starts with `---\n`, take everything up to the next line that is exactly `---` and parse it with `yaml`. Validate against `DeckMeta`; an unknown key or bad value is a warning and the default is used. Keep count of the consumed lines so `Slide.line` stays correct. The block counts as frontmatter only if it is blank or parses to a key: value map; otherwise the leading `---` is an ordinary slide break and the block is the first slide.
 3. **Split** (`split.ts`). Walk the body line by line. Track fenced code: a fence opens on a line matching `/^ {0,3}(`{3,}|~{3,})/` and closes on a line of the same character with at least the same length. Outside fences, a line matching `/^---+\s*$/` ends the current chunk. Drop chunks that are empty or whitespace. Record each chunk's starting line. This is deliberately line-based, not AST-based: `text` directly followed by `---` would otherwise parse as a heading.
 4. **Per chunk** (cache the result by `hash`; see below):
    1. Parse with `remark-parse` and `remark-gfm`.
-   2. **Comments** (`comments.ts`). Remove root-level `html` nodes that are whole comments (`/^<!--([\s\S]*?)-->$/`). Split the body on commas and newlines into `key: value` pairs. If there is at least one pair and every key is a known directive, merge into `SlideOptions` (validating values; bad value → warning, ignored). Otherwise append the comment body to the notes. If every segment is `key: value` shaped but a key is unknown, also warn.
-   3. **Markers.** Remove root-level paragraphs whose text is exactly `. . .` (pause) or `|||` (column break), remembering their positions.
-   4. **Builds** (`builds.ts`). Walk root blocks in order with a counter starting at 0. After each pause marker, increment the counter; every later root block gets `data-step` equal to the counter at that point. A top-level list builds if the slide's `build` option is `true`, or the option is unset and (deck `build` is true or the list's bullet is `+`). For a building list, each direct `listItem` increments the counter and gets that value as `data-step`; the list itself keeps the step it inherited. `Slide.steps` is the final counter. Set steps with `node.data.hProperties['data-step']`.
+   2. **Comments** (`comments.ts`). Remove root-level `html` nodes that are whole comments (`/^<!--([\s\S]*?)-->$/`). Split the body on commas and newlines into `key: value` pairs. If there is at least one pair and every key is a known directive, merge into `SlideOptions` (validating values; bad value → warning, ignored). Otherwise append the comment body to the notes, and warn if it was clearly meant as a directive: an unknown key within two edits of a real one, or unknown keys mixed with real ones. A root-level comment that is never closed is removed, kept as a note, and warned about.
+   3. **Markers.** Before parsing, put blank lines around every line that is exactly `. . .` or `|||` (outside fenced code), so each is its own paragraph. Then remove root-level paragraphs whose text is exactly `. . .` (pause) or `|||` (column break), remembering their positions.
+   4. **Builds** (`builds.ts`). Walk root blocks in order with a counter starting at 0. A pause takes effect at the next block that needs a step: that block increments the counter, and every later root block gets `data-step` equal to the counter at that point. A building list directly after a pause puts its first item on the pause's step. A trailing pause adds no step. A top-level list builds if the slide's `build` option is `true`, or the option is unset and (deck `build` is true or the list's bullet is `+`). For a building list, each direct `listItem` increments the counter and gets that value as `data-step`; the list itself keeps the step it inherited. `Slide.steps` is the final counter. Set steps with `node.data.hProperties['data-step']`.
    5. **Layout** (`layout.ts`). Use `options.layout` if set; otherwise infer (rules below).
    6. **Regions** (`regions.ts`). Regroup the root's children into wrapper nodes per the HTML contract. Wrappers are custom mdast parent nodes: `{ type: 'dexRegion', data: { hName: 'div', hProperties: { className: ['s-main'] } }, children }`.
-   7. **To HTML.** `remark-rehype` with `allowDangerousHtml: true` → `rehype-raw` → media plugin (`media.ts`) → Shiki (`highlight.ts`) → `rehype-stringify`.
+   7. **To HTML.** `remark-rehype` with `allowDangerousHtml: true` → `rehype-raw` → media plugin (`media.ts`) → Shiki (`highlight.ts`) → `rehype-stringify`. `rehype-raw` drops hast `data`, where the code fence's meta string lives, so copy each code node's meta to `hProperties.metastring` first; Shiki reads it from there.
    8. **Notes.** Join note comments with a blank line and render through a small pipeline of `remark-parse`, `remark-gfm`, `remark-rehype`, `rehype-stringify` (no raw HTML).
 5. **Assemble.** Assign `index`. Assign `id` with one `github-slugger` instance per deck so duplicates get `-1`, `-2`. `title` is the text of the first heading of depth ≤ 3, else the first 60 characters of text, else `null`. Number `section` slides in order and set `attrs['data-section']` to a zero-padded count (`01`, `02`). `meta.title` falls back to the first slide's title, then the slug.
 
@@ -942,7 +945,7 @@ Tasks:
 
 1. `router.ts`, `deck` state (fetch `decks/index.json` and `decks/<slug>/deck.json` with relative URLs and `cache: 'no-store'`), `DeckIndex.svelte` (a plain list of decks as bordered rows: title, slide count, modified date).
 2. `Stage.svelte` and `lib/stage.ts` per §7. Export `clientToStage(event)` for later phases, implemented with the overlay's `getScreenCTM().inverse()` so it stays correct under stage scale and camera transforms.
-3. `SlideView.svelte`: props `slide`, `step`, `revealAll`. Renders the element from the HTML contract, toggles `is-pending`, runs auto-fit, plays and pauses `video[data-autoplay]`.
+3. `SlideView.svelte`: props `slide`, `step`, `revealAll`. Renders the element from the HTML contract, toggles `is-pending`, runs auto-fit, plays and pauses `video[data-autoplay]`. Apply `slide.attrs.style` as the element's `style` and every other key in `attrs` as an attribute. Before calling `play()`, set `video.muted = video.hasAttribute('muted')`, because `muted` set through `{@html}` does not always take effect. Code blocks are focusable (`<pre tabindex="0">`); navigation keys must keep working when focus is inside a slide.
 4. `nav` state with the rules in §7, hash sync, clamping when the deck changes.
 5. `commands.ts` and `keys.ts` with the full table from §7. Implement the Phase 3 commands; the rest are registered with empty `run` functions.
 6. `settings` and `ui` state with every field from §5 and §7, persisted where specified.
@@ -951,6 +954,8 @@ Tasks:
 9. Create every remaining component from the §7 skeleton as a stub, and mount them in `App.svelte`.
 10. Basic slide CSS in `slide.css`: safe-area padding, the type roles from §8 for headings and body, `is-pending`, the `.current` fade. Enough to read the demo deck.
 11. `playwright.config.ts` with a `webServer` that runs the dev server on a fixed port, Chromium only, viewport 1600×900. The `webServer` command is `vite --port <port> --strictPort`, not `pnpm start`, so no browser tab opens on the owner's machine. On a machine or worktree where Chromium is not installed yet, run `pnpm exec playwright install chromium` once. `e2e/smoke.spec.ts` covering the acceptance list.
+12. Compile warnings in the browser, dev only: when `deck.warnings` is not empty, log each one with `console.warn` and show a Label in `--red` in the bottom bar, `N WARNINGS`. Clicking it lists them (slide number, line, message); clicking a row goes to that slide. This is how an author finds out about a typo in a directive or an unclosed comment without watching the terminal.
+13. A deck with no slides shows a centered Label, `NO SLIDES YET`, with the deck's file path under it, and still live-reloads.
 
 Acceptance (as Playwright tests where possible):
 
@@ -971,7 +976,7 @@ Gotchas: wait for `document.fonts.ready` before measuring. Use `history.replaceS
 
 Tasks:
 
-1. `slide.css`: all content elements from §8.
+1. `slide.css`: all content elements from §8. Footnotes (`section.footnotes`) are a sibling of `.s-main`, not inside it, so position them against the slide. Add a visually-hidden `.sr-only` rule; the footnotes heading uses it.
 2. `layouts.css`: one block per `data-layout`, per the geometry table. Derive every position from `--W`, `--H`, and the margin variables so 16:10 and 4:3 also work.
 3. `code.css`: code blocks, line highlighting, inline code.
 4. Density and text-scale variables wired into every font size.
@@ -1185,6 +1190,7 @@ Executors: add a line here whenever the implementation differs from this plan. F
 - Phase 0 — `tsconfig.json` sets `"types": ["vite/client"]`, `moduleResolution: "bundler"`, and `paths` for `$shared/*` (no `baseUrl`, which TypeScript 6 deprecates).
 - Phase 0 (follow-up by the planner) — the plan omitted `@types/node`, so no `node:*` import under `engine/` could type-check. Added `@types/node` ^22 to §2 and split type checking: `tsconfig.json` now covers only `src/` and `shared/`; a new `tsconfig.node.json` extends it with Node types and covers `engine/`, `shared/`, `e2e/`, and `*.config.ts` (so `vite.config.ts` is now checked). `pnpm check` runs `svelte-check` and then `tsc -p tsconfig.node.json`. Ground rule 13 records the boundary.
 - Phase 0 — the `new` script points at `engine/scripts/new.mjs`, which Phase 2 creates; `test:e2e` and `shots` point at Playwright files Phase 3/4 create. They fail until then.
+- Phase 1 (follow-up by the planner) — three authoring hazards found by probing the compiler, fixed with tests. (1) A deck that began with `---`, a first slide of headings or text, then `---` lost that slide, because the block was read as frontmatter (`# Title` is a YAML comment); a leading block is now frontmatter only if it is blank or a key: value map. (2) Any note that started with a lowercase word and a colon (`todo: fix this`) warned as an unknown directive; warnings are now limited to near misses and to unknown keys mixed with real ones, and name the likely key. (3) A `---` line inside a multi-line comment splits the slide and used to pass silently; the unclosed comment now warns and its text is kept as a note. §4 and §6 are updated to match, along with the Phase 1 refinements below. §5 and `shared/types.ts` gained two clarifying comments (no type change).
 - Phase 1 — builds: a pause takes effect at the next block that needs a step, not immediately. Literal §6 gives `Intro` / `. . .` / `+ a` / `+ b` the steps `ul=1, a=2, b=3`, so the first click after the pause reveals an empty list; now it is `ul=1, a=1, b=2` (`steps` 2). The same rule means a trailing pause, or several pauses in a row, add no empty step. Blocks after a pause still take the counter at their position, as specified.
 - Phase 1 — markers: before parsing, every line that is exactly `. . .` or `|||` (outside fenced code) gets blank lines around it, so a marker written directly under a line of text is still a marker (§4 says "a line containing only `|||`"; §6 step 3 only removes whole paragraphs, which a lazy continuation line is not). Warning lines are mapped back to the original lines.
 - Phase 1 — comments: a segment is "directive-shaped" only when its key is a lowercase identifier (`/^[a-z][a-z0-9_-]*\s*:/`), so a note such as `Remember: slow down` is a note without a warning, while `layuot: statement` still warns. Commas inside parentheses do not split segments, so `bg: rgb(0, 0, 0)` works.

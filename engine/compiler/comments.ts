@@ -36,6 +36,33 @@ export function isImagePath(value: string): boolean {
   return IMAGE_EXT.test(value);
 }
 
+function editDistance(a: string, b: string): number {
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i];
+    for (let j = 1; j <= b.length; j++) {
+      row[j] = Math.min(prev[j]! + 1, row[j - 1]! + 1, prev[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    prev = row;
+  }
+  return prev[b.length]!;
+}
+
+/** The directive key that `key` is probably a typo of, if any. */
+export function nearestDirective(key: string): string | null {
+  let best: string | null = null;
+  let bestDistance = 3;
+  for (const known of Object.keys(DIRECTIVES)) {
+    const d = editDistance(key, known);
+    // Allow one slip in short keys and two in longer ones.
+    if (d < bestDistance && d <= (known.length <= 4 ? 1 : 2)) {
+      best = known;
+      bestDistance = d;
+    }
+  }
+  return best;
+}
+
 /** Split a comment body on commas and newlines, but not on commas inside parentheses. */
 export function splitSegments(body: string): string[] {
   const out: string[] = [];
@@ -80,9 +107,21 @@ export function extractComments(root: MdRoot): CommentResult {
 
   root.children = root.children.filter((node) => {
     if (node.type !== 'html') return true;
-    const m = COMMENT.exec(node.value.trim());
-    if (!m) return true;
+    const value = node.value.trim();
     const line = node.position?.start.line ?? 1;
+    const m = COMMENT.exec(value);
+    if (!m) {
+      if (!value.startsWith('<!--') || value.includes('-->')) return true;
+      // An unclosed comment would swallow the rest of the slide. The usual cause
+      // is a `---` line inside a note, which always starts a new slide.
+      warnings.push({
+        line,
+        message: 'comment is never closed on this slide (a `---` line starts a new slide even inside a comment)',
+      });
+      const note = dedent(value.slice(4));
+      if (note) notes.push(note);
+      return false;
+    }
     const body = m[1]!;
     const segments = splitSegments(body);
     const pairs = segments.map((s) => PAIR.exec(s));
@@ -102,11 +141,16 @@ export function extractComments(root: MdRoot): CommentResult {
       }
     } else {
       if (allPairs) {
-        const unknown = pairs.map((p) => p![1]!).filter((k) => !Object.hasOwn(DIRECTIVES, k));
-        warnings.push({
-          line,
-          message: `unknown directive ${unknown.map((k) => `"${k}"`).join(', ')}`,
-        });
+        // Warn only when this was clearly meant as a directive: it mixes in a real
+        // key, or a key is a near miss. `todo: fix this` is just a note.
+        const keys = pairs.map((p) => p![1]!);
+        const unknown = keys.filter((k) => !Object.hasOwn(DIRECTIVES, k));
+        const someKnown = unknown.length < keys.length;
+        for (const key of unknown) {
+          const guess = nearestDirective(key);
+          if (guess) warnings.push({ line, message: `unknown directive "${key}" (did you mean "${guess}"?)` });
+          else if (someKnown) warnings.push({ line, message: `unknown directive "${key}"; the whole comment was kept as a note` });
+        }
       }
       const note = dedent(body);
       if (note) notes.push(note);

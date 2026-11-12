@@ -78,4 +78,27 @@ describe('frontmatter', () => {
     const fm = parseFrontmatter('---\n# Hi\n');
     expect(fm.body).toBe('---\n# Hi\n');
   });
+
+  it('does not swallow a first slide that sits between two separators', async () => {
+    const source = '---\n# My Title\n---\n## Next\n\n- a';
+    const fm = parseFrontmatter(source);
+    expect(fm.body).toBe(source);
+    expect(fm.bodyLine).toBe(1);
+    const deck = await compileDeck(source, { slug: 't' });
+    expect(deck.slides.map((s) => s.title)).toEqual(['My Title', 'Next']);
+    expect(deck.warnings).toEqual([]);
+  });
+
+  it('treats a leading block that is not a key: value map as a slide', async () => {
+    const deck = await compileDeck('---\nHello world\n---\n## Next', { slug: 't' });
+    expect(deck.slides.map((s) => s.title)).toEqual(['Hello world', 'Next']);
+    expect(deck.warnings).toEqual([]);
+    const list = await compileDeck('---\n- one\n- two\n---\n## Next', { slug: 't' });
+    expect(list.slides).toHaveLength(2);
+  });
+
+  it('does not report a YAML error for a leading block with no key: value line', async () => {
+    const deck = await compileDeck('---\n*emphasis* and [a bracket\n---\n## Next', { slug: 't' });
+    expect(deck.slides).toHaveLength(2);
+  });
 });

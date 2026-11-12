@@ -125,8 +125,8 @@ describe('per-slide cache', () => {
     const src = '# A\n\n---\n\n<!-- layuot: x -->\n\n## B';
     const a = await compileDeck(src, { slug: 'w' });
     const b = await compileDeck('# Inserted\n\n---\n\n' + src, { slug: 'w' });
-    expect(a.warnings).toEqual([{ slide: 1, line: 5, message: 'unknown directive "layuot"' }]);
-    expect(b.warnings).toEqual([{ slide: 2, line: 9, message: 'unknown directive "layuot"' }]);
+    expect(a.warnings).toEqual([{ slide: 1, line: 5, message: 'unknown directive "layuot" (did you mean "layout"?)' }]);
+    expect(b.warnings).toEqual([{ slide: 2, line: 9, message: 'unknown directive "layuot" (did you mean "layout"?)' }]);
   });
 });
 

@@ -52,11 +52,18 @@ export function parseFrontmatter(source: string): Frontmatter {
   const body = lines.slice(close + 1).join('\n');
   const bodyLine = close + 2;
 
+  // A deck may simply begin with a slide break. The block between the first two
+  // `---` lines is frontmatter only if it is a key: value map (or blank);
+  // otherwise it is the first slide and must not be swallowed.
+  const notFrontmatter: Frontmatter = { meta, body: source, bodyLine: 1, warnings };
+  const hasKeyLine = yamlLines.some((l) => /^[A-Za-z_][\w-]*\s*:(\s|$)/.test(l));
+
   let data: unknown;
   try {
     data = parseYaml(yamlLines.join('\n'));
   } catch (err) {
     if (err instanceof YAMLError) {
+      if (!hasKeyLine) return notFrontmatter;
       const yamlLine = err.linePos?.[0]?.line ?? 1;
       const first = (err.message.split('\n')[0] ?? 'invalid YAML').replace(/ at line \d+, column \d+:?$/, '');
       throw new DexCompileError(`Invalid frontmatter: ${first}`, yamlLine + 1);
@@ -64,12 +71,12 @@ export function parseFrontmatter(source: string): Frontmatter {
     throw err;
   }
 
-  if (data === null || data === undefined) return { meta, body, bodyLine, warnings };
-
-  if (typeof data !== 'object' || Array.isArray(data)) {
-    warnings.push({ line: 2, message: 'frontmatter is not a key: value map; using defaults' });
-    return { meta, body, bodyLine, warnings };
+  if (data === null || data === undefined) {
+    // `# Title` is a YAML comment, so a first slide of headings parses to nothing.
+    return yamlLines.every((l) => l.trim() === '') ? { meta, body, bodyLine, warnings } : notFrontmatter;
   }
+
+  if (typeof data !== 'object' || Array.isArray(data)) return notFrontmatter;
 
   const lineOf = (key: string): number => {
     const re = new RegExp(`^\\s*["']?${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']?\\s*:`);

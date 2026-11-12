@@ -35,7 +35,7 @@ export interface Slide {
   title: string | null;
   layout: LayoutName;
   html: string;           // inner HTML of the slide element (§6 HTML contract)
-  attrs: Record<string, string>;   // data-* attributes for the slide element
+  attrs: Record<string, string>;   // data-* attributes for the slide element, plus `style` when the slide has a `bg`
   notes: string;          // speaker notes as HTML, '' when none
   steps: number;          // number of build steps, 0 when none
   options: SlideOptions;
@@ -44,6 +44,7 @@ export interface Slide {
   hash: string;           // changes when the slide's rendered output would change
 }
 
+// `slide` is the 0-based slide index, or -1 for frontmatter. `line` is 1-based in deck.md.
 export interface CompileWarning { slide: number; line: number; message: string }
 
 export interface Deck {
