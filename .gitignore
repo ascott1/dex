@@ -6,3 +6,6 @@ playwright-report
 
 # Third-party reference screenshots: local only, not for the repo
 docs/reference/
+
+# Temporary decks written by the end-to-end tests
+decks/zz-e2e-*
