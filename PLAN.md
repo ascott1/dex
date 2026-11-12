@@ -86,7 +86,7 @@ In-browser editing of slide text, AI features (auto-staging, translation, captio
 |---|---|---|
 | Dev server and build | `vite` | ^8.3 |
 | UI | `svelte` (runes), `@sveltejs/vite-plugin-svelte` | ^5.57, ^7.3 |
-| Types | `typescript` | **^6.0.3, not 7** |
+| Types | `typescript`, `@types/node` | **^6.0.3, not 7**; ^22 |
 | Type check | `svelte-check` | ^4.7 |
 | Markdown | `unified` ^11, `remark-parse` ^11, `remark-gfm` ^4, `remark-rehype` ^11, `rehype-raw` ^7, `rehype-stringify` ^10 | |
 | Markdown helpers | `unist-util-visit` ^5, `mdast-util-to-string` ^4, `github-slugger` ^2, `yaml` ^2.9 | |
@@ -161,7 +161,7 @@ dex/
 | `pnpm start <slug>` | Same, opening `#/<slug>` directly |
 | `pnpm new <slug>` | Create `decks/<slug>/deck.md` from the starter template |
 | `pnpm build` / `pnpm preview` | Static export to `dist/` / serve it |
-| `pnpm check` | `svelte-check` over the whole repo |
+| `pnpm check` | `svelte-check` for browser code (`src/`, `shared/`), then `tsc -p tsconfig.node.json` for Node code (`engine/`, `e2e/`, config files) |
 | `pnpm test` / `pnpm test:e2e` | Vitest unit tests / Playwright smoke tests |
 | `pnpm shots` | Screenshot every demo slide in both themes into `docs/shots/` |
 
@@ -197,8 +197,9 @@ These were run against the versions above. Build on them without re-deriving.
 10. Before saying a phase is done: `pnpm check`, `pnpm test`, and (from Phase 3 on) `pnpm test:e2e` all pass, and you have looked at the result in a browser or in screenshots. Report anything you could not verify.
 11. Commit once per phase: `phase N: <summary>`.
 12. If your environment offers them, load the `svelte5-best-practices` skill before writing Svelte, and `make-interfaces-feel-better` for Phases 4, 5, and 10.
+13. Type checking is split in two. `tsconfig.json` covers browser code (`src/`, `shared/`) and has no Node types. `tsconfig.node.json` covers Node code (`engine/`, `e2e/`, `*.config.ts`, `shared/`). Code under `src/` must not import `node:*` or anything under `engine/`; the only code both sides share is `shared/`.
 
-Phase 0 copies this list into `CLAUDE.md`.
+`CLAUDE.md` carries a copy of this list; keep the two in step.
 
 ---
 
@@ -867,7 +868,7 @@ Tasks:
 
 1. `git init`. `.gitignore` already exists and ignores `node_modules`, `dist`, `test-results`, `playwright-report`, `.DS_Store`, and `docs/reference/`. Keep it; never commit anything from `docs/reference/`.
 2. `package.json`: `"type": "module"`, `"private": true`, `"packageManager": "pnpm@10.32.1"`, `"engines": { "node": ">=22.12" }`, the scripts from §2, and the dependencies from §2 (everything is a devDependency).
-3. `vite.config.ts`: Svelte plugin, `base: './'`, alias `$shared` → `shared`. `svelte.config.js` with `vitePreprocess`. `tsconfig.json`: strict, covering `src`, `engine`, `shared`, `e2e`. Vitest configured for the `node` environment, matching `engine/**/*.test.ts`.
+3. `vite.config.ts`: Svelte plugin, `base: './'`, alias `$shared` → `shared`. `svelte.config.js` with `vitePreprocess`. `tsconfig.json` (strict) covers `src` and `shared`; `tsconfig.node.json` extends it with Node types and covers `engine`, `shared`, `e2e`, and `*.config.ts`. Vitest configured for the `node` environment, matching `engine/**/*.test.ts`.
 4. `index.html` with `<html lang="en" data-theme="paper">` and `<div id="app">`. `src/main.ts` imports the font CSS files listed in §2, then `tokens.css` and `base.css`, and mounts `App.svelte` with `mount()`.
 5. `tokens.css` exactly as §8. `base.css`: a minimal reset, `html { background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-optical-sizing: auto; -webkit-font-smoothing: antialiased }`, the focus rule.
 6. `shared/types.ts` exactly as §5.
@@ -949,7 +950,7 @@ Tasks:
 8. Live reload: `import.meta.hot.on('dex:update', …)` refetches the deck and keeps the current slide by `id` when it still exists, otherwise clamps the index. With `settings.followEdits` on, jump to the first slide whose `hash` changed. `dex:error` shows `ErrorOverlay` (a mono `--red` line at the bottom-left with the message and line, dismissible) and keeps the last good deck.
 9. Create every remaining component from the §7 skeleton as a stub, and mount them in `App.svelte`.
 10. Basic slide CSS in `slide.css`: safe-area padding, the type roles from §8 for headings and body, `is-pending`, the `.current` fade. Enough to read the demo deck.
-11. `playwright.config.ts` with a `webServer` that runs the dev server on a fixed port, Chromium only, viewport 1600×900. `e2e/smoke.spec.ts` covering the acceptance list.
+11. `playwright.config.ts` with a `webServer` that runs the dev server on a fixed port, Chromium only, viewport 1600×900. The `webServer` command is `vite --port <port> --strictPort`, not `pnpm start`, so no browser tab opens on the owner's machine. On a machine or worktree where Chromium is not installed yet, run `pnpm exec playwright install chromium` once. `e2e/smoke.spec.ts` covering the acceptance list.
 
 Acceptance (as Playwright tests where possible):
 
@@ -1181,6 +1182,6 @@ Acceptance:
 
 Executors: add a line here whenever the implementation differs from this plan. Format: `Phase N — what changed — why`.
 
-- Phase 0 — `tsconfig.json` sets `"types": ["vite/client"]`, `moduleResolution: "bundler"`, and `paths` for `$shared/*` (no `baseUrl`, which TypeScript 6 deprecates). `vite.config.ts` is not in the tsconfig `include` (the plan lists `src`, `engine`, `shared`, `e2e`), so its `node:url` import is not type-checked — needed because `@types/node` is not installed (see next line).
-- Phase 0 — open issue, not fixed: `@types/node` is not in §2, so any `node:*` import under `engine/` fails `pnpm check` ("Cannot find name 'node:fs'"). Phase 1 (`node:crypto` for the SHA-1 hash) and Phase 2 (`node:fs`, `node:path` in the Vite plugin) will need it. Vite 8 lists `@types/node` (`^20.19.0 || >=22.12.0`) as an optional peer. Recommended: add `@types/node` `^22` to §2 and `"node"` to tsconfig `types` at the start of Phase 1.
+- Phase 0 — `tsconfig.json` sets `"types": ["vite/client"]`, `moduleResolution: "bundler"`, and `paths` for `$shared/*` (no `baseUrl`, which TypeScript 6 deprecates).
+- Phase 0 (follow-up by the planner) — the plan omitted `@types/node`, so no `node:*` import under `engine/` could type-check. Added `@types/node` ^22 to §2 and split type checking: `tsconfig.json` now covers only `src/` and `shared/`; a new `tsconfig.node.json` extends it with Node types and covers `engine/`, `shared/`, `e2e/`, and `*.config.ts` (so `vite.config.ts` is now checked). `pnpm check` runs `svelte-check` and then `tsc -p tsconfig.node.json`. Ground rule 13 records the boundary.
 - Phase 0 — the `new` script points at `engine/scripts/new.mjs`, which Phase 2 creates; `test:e2e` and `shots` point at Playwright files Phase 3/4 create. They fail until then.

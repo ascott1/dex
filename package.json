@@ -12,7 +12,7 @@
     "new": "node engine/scripts/new.mjs",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.node.json",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "shots": "playwright test e2e/shots.spec.ts"
@@ -24,6 +24,7 @@
     "@shikijs/rehype": "^4.6.0",
     "@shikijs/transformers": "^4.6.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
+    "@types/node": "^22.20.5",
     "github-slugger": "^2.0.0",
     "mdast-util-to-string": "^4.0.0",
     "perfect-freehand": "^1.2.0",

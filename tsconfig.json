@@ -1,10 +1,16 @@
 {
   "compilerOptions": {
     "target": "es2023",
-    "lib": ["es2023", "dom", "dom.iterable"],
+    "lib": [
+      "es2023",
+      "dom",
+      "dom.iterable"
+    ],
     "module": "esnext",
     "moduleResolution": "bundler",
-    "types": ["vite/client"],
+    "types": [
+      "vite/client"
+    ],
     "strict": true,
     "noEmit": true,
     "isolatedModules": true,
@@ -14,8 +20,13 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
-      "$shared/*": ["./shared/*"]
+      "$shared/*": [
+        "./shared/*"
+      ]
     }
   },
-  "include": ["src/**/*", "engine/**/*", "shared/**/*", "e2e/**/*"]
+  "include": [
+    "src/**/*",
+    "shared/**/*"
+  ]
 }

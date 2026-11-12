@@ -16,6 +16,7 @@ Markdown in, deck out. `PLAN.md` is the source of truth: §1–§8 are the spec,
 10. Before saying a phase is done: `pnpm check`, `pnpm test`, and (from Phase 3 on) `pnpm test:e2e` all pass, and you have looked at the result in a browser or in screenshots. Report anything you could not verify.
 11. Commit once per phase: `phase N: <summary>`.
 12. If your environment offers them, load the `svelte5-best-practices` skill before writing Svelte, and `make-interfaces-feel-better` for Phases 4, 5, and 10.
+13. Type checking is split in two. `tsconfig.json` covers browser code (`src/`, `shared/`) and has no Node types. `tsconfig.node.json` covers Node code (`engine/`, `e2e/`, `*.config.ts`, `shared/`). Code under `src/` must not import `node:*` or anything under `engine/`; the only code both sides share is `shared/`.
 
 ## Notes
 
