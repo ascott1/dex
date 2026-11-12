@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+<rect width="1600" height="1000" fill="#dce9e6"/>
+<line x1="200" y1="150" x2="1400" y2="150" stroke="#0f1413" stroke-width="6"/>
+<line x1="200" y1="214" x2="1100" y2="214" stroke="#0f1413" stroke-width="2"/>
+<line x1="200" y1="278" x2="1300" y2="278" stroke="#0f1413" stroke-width="2"/>
+<line x1="200" y1="342" x2="800" y2="342" stroke="#0f1413" stroke-width="2"/>
+<line x1="200" y1="406" x2="1200" y2="406" stroke="#0f1413" stroke-width="2"/>
+<line x1="200" y1="470" x2="600" y2="470" stroke="#0f1413" stroke-width="6"/>
+<line x1="200" y1="534" x2="1400" y2="534" stroke="#0f1413" stroke-width="2"/>
+<line x1="200" y1="598" x2="1000" y2="598" stroke="#0f1413" stroke-width="2"/>
+<line x1="200" y1="662" x2="900" y2="662" stroke="#0f1413" stroke-width="2"/>
+<line x1="200" y1="726" x2="1250" y2="726" stroke="#0f1413" stroke-width="2"/>
+<line x1="200" y1="790" x2="700" y2="790" stroke="#0f1413" stroke-width="6"/>
+<line x1="200" y1="854" x2="1150" y2="854" stroke="#0f1413" stroke-width="2"/>
+<rect x="1340" y="790" width="60" height="60" fill="#0f1413"/>
+</svg>
