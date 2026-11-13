@@ -43,3 +43,18 @@ export function clientToStage(event: { clientX: number; clientY: number }): { x:
   const p = new DOMPoint(event.clientX, event.clientY).matrixTransform(ctm.inverse());
   return { x: p.x, y: p.y };
 }
+
+/**
+ * Convert a client position to stage-frame coordinates: logical stage pixels
+ * before the camera (what zoom anchors on, and where the laser is drawn).
+ * Unlike clientToStage, it does not depend on the camera, so it is right even
+ * while a camera transition is running. Returns null before the stage exists.
+ */
+export function clientToFrame(event: { clientX: number; clientY: number }): { x: number; y: number } | null {
+  const stage = overlay?.closest<HTMLElement>('.stage');
+  if (!stage || stage.offsetWidth === 0) return null;
+  const rect = stage.getBoundingClientRect();
+  const scale = rect.width / stage.offsetWidth;
+  if (!(scale > 0)) return null;
+  return { x: (event.clientX - rect.left) / scale, y: (event.clientY - rect.top) / scale };
+}

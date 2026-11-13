@@ -16,9 +16,13 @@ export const ui = $state({
   editing: null as string | null,                    // Phase 6: id of the sticky note being edited
   selected: null as string | null,                   // Phase 6: id of the selected sticky note
   goto: '',                                          // Phase 5: digits typed for go-to-slide
+  cameraAnimate: false,                              // Phase 7: the last camera change eases (key zooms)
+  panning: false,                                    // Phase 7: a drag-to-pan is under way
 });
 
-export function resetCamera(): void {
+/** Back to { k: 1, x: 0, y: 0 }. Immediate unless `animate` (key-triggered resets). */
+export function resetCamera(animate = false): void {
+  ui.cameraAnimate = animate;
   ui.camera.k = 1;
   ui.camera.x = 0;
   ui.camera.y = 0;

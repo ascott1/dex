@@ -2,7 +2,7 @@
   import { runCommand } from '../lib/commands';
   import { deck } from '../state/deck.svelte';
   import { goto, nav, next, prev } from '../state/nav.svelte';
-  import { resetCamera, ui } from '../state/ui.svelte';
+  import { ui } from '../state/ui.svelte';
   import { armNote } from '../lib/tools.svelte';
   import DrawBar from './DrawBar.svelte';
 
@@ -48,7 +48,7 @@
       <DrawBar />
     {:else}
       {#if ui.camera.k > 1}
-        <button class="label label-btn zoom" type="button" title="Reset zoom" onpointerdown={keepFocus} onclick={resetCamera}>{zoom}%</button>
+        <button class="label label-btn zoom" type="button" title="Reset zoom" onpointerdown={keepFocus} onclick={() => runCommand('zoomReset')}>{zoom}%</button>
       {/if}
       <button class="label label-btn" class:armed={ui.tool === 'note'} type="button" aria-pressed={ui.tool === 'note'}
         title="Click on the slide to place a note (n puts one at the pointer)"
