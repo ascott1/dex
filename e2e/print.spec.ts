@@ -121,12 +121,12 @@ test.describe('print view on the demo deck', () => {
     await expect(page.locator('[data-print-count]')).toHaveText('23 pages');
   });
 
-  test('PRINT / PDF in the settings opens the print view in a new tab and the deck stays put', async ({ page, context }) => {
+  test('PRINT / PDF / PPTX in the settings opens the print view in a new tab and the deck stays put', async ({ page, context }) => {
     await page.goto('/#/demo/5');
     await expect(page.locator('.bottombar .counter')).toHaveText('05 / 23');
     await page.keyboard.press('s');
     const opened = context.waitForEvent('page');
-    await page.getByRole('button', { name: 'Print / PDF' }).click();
+    await page.getByRole('button', { name: 'Print / PDF / PPTX' }).click();
     const tab = await opened;
     await tab.waitForURL(/#\/demo\/print$/);
     await expect(tab.locator('.print-sheet')).toHaveCount(DEMO_SHOWN);

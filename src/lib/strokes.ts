@@ -5,6 +5,8 @@ import type { Stroke } from '$shared/types';
 
 export const PEN_SIZES = [4, 6, 10] as const;
 export const MARKER_SIZE = 28;
+/** The marker's opacity per theme. DrawLayer's `.marker` rule holds the same two numbers. */
+export const MARKER_OPACITY = { paper: 0.45, ink: 0.6 } as const;
 /** Arrow and box drags shorter than this are discarded. */
 export const MIN_SHAPE = 8;
 
@@ -34,11 +36,14 @@ export function svgPathFromStroke(points: number[][], closed = true): string {
   return result;
 }
 
-/** Filled outline of a pen or marker stroke. `last` is false while it is being drawn. */
-export function freehandPath(stroke: Pick<Stroke, 'tool' | 'size' | 'points'>, last = true): string {
+/**
+ * The outline polygon of a pen or marker stroke, as `[x, y]` points. `last` is
+ * false while it is being drawn.
+ */
+export function freehandOutline(stroke: Pick<Stroke, 'tool' | 'size' | 'points'>, last = true): number[][] {
   const marker = stroke.tool === 'marker';
   const simulatePressure = stroke.points.every((p) => p[2] === NO_PRESSURE);
-  const outline = getStroke(stroke.points, {
+  return getStroke(stroke.points, {
     size: marker ? MARKER_SIZE : stroke.size,
     thinning: marker ? 0 : 0.5,
     smoothing: 0.5,
@@ -46,7 +51,11 @@ export function freehandPath(stroke: Pick<Stroke, 'tool' | 'size' | 'points'>, l
     simulatePressure,
     last,
   });
-  return svgPathFromStroke(outline);
+}
+
+/** Filled outline of a pen or marker stroke, as an SVG path. `last` is false while it is being drawn. */
+export function freehandPath(stroke: Pick<Stroke, 'tool' | 'size' | 'points'>, last = true): string {
+  return svgPathFromStroke(freehandOutline(stroke, last));
 }
 
 /** The two arms of an arrow head: `max(14, size·3)` long at ±28° from the shaft. */

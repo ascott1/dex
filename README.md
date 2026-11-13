@@ -209,9 +209,11 @@ You can also zoom with a trackpad pinch or `⌘`/`Ctrl` and the mouse wheel, and
 
 **Settings.** Press `s` for text size (Quiet for screen sharing, Regular for most rooms, Loud for big ones), builds, motion, and when the bars hide. Press `?` for every keyboard shortcut.
 
-## PDF
+## PDF and PowerPoint
 
-Press `s`, then **Print / PDF**. A new tab shows every slide as a page, with all builds revealed. Choose whether to include drawings and notes and any skipped slides, then press **Print** and save as PDF. In Chrome the pages keep the slide colours and the deck's shape.
+Press `s`, then **Print / PDF / PPTX**. A new tab shows every slide as a page, with all builds revealed. Choose whether to include drawings and notes and any skipped slides, then press **Print** and save as PDF. In Chrome the pages keep the slide colours and the deck's shape.
+
+**PowerPoint** in the same bar saves those pages as a `.pptx` that PowerPoint, Keynote, and Google Slides open. The text stays editable: titles and lists are text boxes, tables are tables, pictures are pictures, drawings are shapes, and speaker notes come along. Install DM Sans and DM Mono for the text to sit as it does in dex (both are free on Google Fonts, and Google Slides has them built in); without them a viewer substitutes a font and lines break differently. Builds, transitions, and video do not come across (a video leaves a labelled frame), and links are underlined but not clickable.
 
 ## Sharing the deck as a website
 

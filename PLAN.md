@@ -31,6 +31,7 @@ tick the phase in §0, record any deviation from the plan in §11, and commit.
 | 8 | Presenter view, speaker notes, timer, blackout | M | 3 | Sonnet | [x] |
 | 9 | Print/PDF and static export | S | 4 | Haiku | [x] |
 | 10 | QA, polish, README | M | all | Sonnet, then a human or stronger-model design review | [x] |
+| 11 | PowerPoint export (`.pptx`) from the print view | L | 9 | Sonnet or stronger | [x] |
 
 Phases 4–8 only depend on 3 and touch separate files, so they can run in parallel in separate worktrees. Running them in order is simpler and is the default.
 
@@ -71,10 +72,11 @@ A local tool for writing and giving presentations.
 | Zoom and pan | 7 |
 | Footnotes and sources | 1, 4 |
 | PDF via print, static export for hosting | 9 |
+| PowerPoint (`.pptx`) export with editable text | 11 |
 
 ### Not in v1
 
-In-browser editing of slide text, AI features (auto-staging, translation, captions), collaboration or cloud sync, PPTX/Keynote export, more than two themes, math, diagrams, phone remote. See §10.
+In-browser editing of slide text, AI features (auto-staging, translation, captions), collaboration or cloud sync, more than two themes, math, diagrams, phone remote. See §10. (PowerPoint export was on this list; it was added after v1 as Phase 11. Keynote and Google Slides open the same file.)
 
 ---
 
@@ -146,6 +148,7 @@ dex/
 │  ├─ main.ts  App.svelte
 │  ├─ state/                deck.svelte.ts nav.svelte.ts settings.svelte.ts ui.svelte.ts marks.svelte.ts sync.ts
 │  ├─ lib/                  router.ts commands.ts keys.ts stage.ts storage.ts
+│  │  └─ pptx/              model.ts collect.ts write.ts zip.ts index.ts   (Phase 11)
 │  ├─ components/           Stage SlideView TopBar BottomBar Icon Segmented SettingsSheet Overview
 │  │                        SourceView DrawLayer DrawBar NotesLayer StickyNote Laser Blackout
 │  │                        PresenterView PrintView DeckIndex ErrorOverlay   (all .svelte)
@@ -180,6 +183,19 @@ These were run against the versions above. Build on them without re-deriving.
 - Vite 8: middleware added in `configureServer` runs before Vite's own static serving. Vite serves any file under the project root in dev, so `decks/<slug>/media/x.png` needs no extra middleware. `handleHotUpdate` fires when `deck.md` changes, and returning `[]` suppresses the default reload. `server.hot.send(event, data)` exists.
 - `perfect-freehand` exports `getStroke`.
 - Font CSS entry points: `@fontsource-variable/dm-sans/opsz.css` and `opsz-italic.css` (weight and optical-size axes), `@fontsource/dm-mono/400.css`, `500.css`, `400-italic.css`.
+
+### Verified in a spike on 2026-11-13 (PowerPoint export, Phase 11)
+
+A throwaway exporter was run on the demo deck (22 slides) and on a 4:3 Ink deck with every kind of mark. Its files were checked three ways: XSD validation against the ISO/IEC 29500 transitional schemas, a round trip through `python-pptx` (every shape, picture, table and notes slide read back), and macOS Quick Look renders compared side by side with Chromium screenshots of the print view. Build on these without re-deriving. (Phase 11 measured four of these again and found Quick Look less exact than this list says: line breaks, tab stops, rectangle outlines and text transparency. See the Phase 11 entries in §11.)
+
+- **No library is needed.** A `.pptx` is a ZIP of XML parts. A store-only ZIP (method 0, CRC-32, the UTF-8 name flag, `[Content_Types].xml` as the first entry) of hand-written parts passed all three checks. The parts: `[Content_Types].xml`, `_rels/.rels`, `docProps/core.xml`, `ppt/presentation.xml` and its rels, one slide master, one blank slide layout, `ppt/theme/theme1.xml`, `ppt/slides/slideN.xml` and their rels, `ppt/media/*`, and, when any slide has speaker notes, `ppt/notesMasters/notesMaster1.xml`, `ppt/theme/theme2.xml` and `ppt/notesSlides/notesSlideN.xml`. `presProps`, `viewProps`, `tableStyles` and `docProps/app.xml` were left out and not missed.
+- **Units.** 1 stage pixel = 9525 EMU = 0.75 pt. A 1600×900 stage is `<p:sldSz cx="15240000" cy="8572500"/>` (1200 wide is 11430000). Font size `sz` and letter-spacing `spc` are hundredths of a point: pixels × 75. Line spacing `a:spcPts` likewise.
+- **The DOM has everything.** In the print view, `getBoundingClientRect()` relative to the `.print-page`, divided by the page's on-screen scale, gives stage coordinates; computed styles give the type. A text box at a block's content box with zero insets, top anchor, and exact line spacing (`<a:lnSpc><a:spcPts val="…"/></a:lnSpc>` from the computed `line-height`) put every line within about 3 stage pixels of where Chromium drew it, for every layout, even in a substitute font. Collecting all 22 slides took a quarter of a second.
+- **Hairlines must be lines.** Quick Look does not draw a filled rectangle 1 pixel high. It does draw a `p:cxnSp` line with `<a:ln w="9525">`.
+- **Native bullets misplace in Quick Look.** With `a:buChar` and a hanging indent, Quick Look draws the bullet a further `|indent|` to the left, outside the text box, even for the exact form PowerPoint itself writes (`marL="342900" indent="-342900"`). A marker typed as text and followed by a tab, with the same hanging indent and a tab stop at `marL`, lands where it should. Quick Look is what Finder, Mail and iOS use to preview a `.pptx`.
+- **Fonts.** A machine without DM Sans shows Times in Quick Look; `panose` and `pitchFamily` on `a:latin` are valid and are what PowerPoint uses to pick a substitute, but Quick Look ignores them. DM Sans and DM Mono contain `•` and `–` but no square (U+25A0, U+25AA); Arial has one.
+- **Also valid and rendered:** a native table (`a:tbl` in a `p:graphicFrame`, empty `<a:tblPr/>`, cell padding as `marL`/`marT`/…, the row rule as `a:lnB`; rows sit a few pixels off the browser's); freeform polygons (`a:custGeom`, `a:lnTo` points, `a:alpha` for the marker); a solid slide background (`p:bgPr`); pictures drawn through a canvas at 2× and stored as PNG; notes slides with a notes master. `a:highlight` on a run is valid, but Quick Look does not draw it.
+- **Not verified, because the planning machine has neither:** Microsoft PowerPoint itself, Google Slides, LibreOffice, and how the text sits when DM Sans is installed.
 
 ---
 
@@ -1206,6 +1222,139 @@ Acceptance:
 - A person who has not seen this plan can run `pnpm new talk`, write five slides with an image from the README alone, and present them.
 - The §11 log is complete, and every phase in §0 is ticked.
 
+### Phase 11 — PowerPoint export
+
+**Goal:** a `.pptx` from the print view, beside the PDF: one slide per page shown, with text that can still be edited, real tables and pictures, marks as shapes, and speaker notes. No new dependency. Read "Verified in a spike on 2026-11-13" in §2 first; this phase is built on it.
+
+**How it works.** The print view already lays out every slide at stage coordinates with all builds revealed. The export measures that layout in the DOM and writes each box as a PowerPoint shape in the same place. Only pictures are rasterised. It runs in the browser, so it works under `pnpm start` and in a static build alike, and it exports exactly what the print view is showing: the same slides, the same MARKS and SKIPPED SLIDES toggles, the same text size and theme.
+
+**Files** (all new, in `src/lib/pptx/`):
+
+| File | Holds |
+|---|---|
+| `model.ts` | Types only: the plain-data description of a deck to write. No DOM types. It is the contract between the two halves. |
+| `collect.ts` | DOM → model. The only file that touches the DOM. Tested end to end. |
+| `write.ts` | Model → `Uint8Array`. Pure: no DOM, no `node:*`, no hex colours of its own. Unit tested. |
+| `zip.ts` | `zip(files)` and `crc32(bytes)`. Pure. Unit tested. |
+| `index.ts` | `exportPptx(...)`: waits for fonts and pictures, collects, writes, and starts the download. |
+
+`PrintView.svelte` loads it with `await import('../lib/pptx')` on the first click, so none of it is in the bundle a presenter loads. `shared/types.ts` does not change: nothing outside this folder uses the model.
+
+The model, in stage pixels and `RRGGBB` colours. Names may be adjusted (note it in §11); the split into a DOM half and a pure half may not.
+
+```ts
+export interface PptxDeck {
+  title: string; author?: string; lang: string;
+  w: number; h: number;
+  palette: PptxPalette;            // for the file's theme part, read from tokens.css at export time
+  slides: PptxSlide[];
+}
+export interface PptxPalette { bg: string; ink: string; ink2: string; ink3: string; line: string; red: string; blue: string; marker: string }
+export interface PptxSlide { bg: string; items: PptxItem[]; notes: string[] }   // notes: plain-text paragraphs
+export interface PptxFill { color: string; alpha?: number }                      // alpha 0–1, default 1
+export interface PptxStroke extends PptxFill { width: number }
+export type PptxItem =
+  | { kind: 'rect'; x: number; y: number; w: number; h: number; fill?: PptxFill; line?: PptxStroke }
+  | { kind: 'line'; x1: number; y1: number; x2: number; y2: number; line: PptxStroke; cap: 'flat' | 'round'; arrow?: boolean }
+  | { kind: 'path'; points: [number, number][]; fill: PptxFill }                 // a closed polygon
+  | { kind: 'picture'; x: number; y: number; w: number; h: number; key: string; type: 'png' | 'jpeg'; data: Uint8Array; alt: string }
+  | { kind: 'text'; x: number; y: number; w: number; h: number; wrap: boolean; paragraphs: PptxParagraph[]; fill?: PptxFill; inset?: number }
+  | { kind: 'table'; x: number; y: number; w: number; h: number; columns: number[]; rows: PptxRow[] };
+export interface PptxParagraph {
+  runs: PptxRun[]; align: 'l' | 'ctr' | 'r'; lineHeight: number;
+  spaceBefore?: number; marginLeft?: number; indent?: number; tab?: number;
+}
+export type PptxRun =
+  | { break: true }
+  | { text: string; font: string; size: number; bold: boolean; italic: boolean; color: PptxFill;
+      spacing?: number; underline?: boolean; superscript?: boolean; highlight?: string };
+export interface PptxRow { h: number; cells: PptxCell[] }
+export interface PptxCell { paragraphs: PptxParagraph[]; padding: [l: number, t: number, r: number, b: number]; anchor: 't' | 'ctr' | 'b'; borderBottom?: PptxStroke; fill?: string }
+```
+
+Tasks:
+
+1. **`zip.ts`.** A store-only writer: local headers, central directory, end record; method 0, CRC-32, general-purpose flag `0x0800` (UTF-8 names), a fixed DOS date. `zip([[name, string | Uint8Array], …])` keeps the order it is given.
+
+2. **`write.ts`: `writePptx(deck): Uint8Array`.** The parts listed in §2. Slide size from `deck.w` and `deck.h`. One master, one blank layout, a theme whose colour scheme comes from `deck.palette` and whose fonts are DM Sans. Per slide: `<p:bg><p:bgPr>` with the slide's colour, then the items in order as shapes. A notes slide for each slide that has notes, and the notes master only when at least one does. A `picture` is stored once per `key` and shared by relationship. Details that the XSD (and so PowerPoint) is strict about:
+   - Child order. `p:presentation`: `p:sldMasterIdLst`, `p:notesMasterIdLst`, `p:sldIdLst`, `p:sldSz`, `p:notesSz`. `p:spPr`: `a:xfrm`, geometry, fill, `a:ln`. `a:pPr`: `a:lnSpc`, `a:spcBef`, `a:buNone`, `a:tabLst`. `a:rPr`: fill, `a:highlight`, `a:latin`, `a:ea`, `a:cs`. `a:tcPr`: `a:lnL`, `a:lnR`, `a:lnT`, `a:lnB`, then the fill.
+   - Ids. `p:sldMasterId` is 2147483648, `p:sldLayoutId` 2147483649, `p:sldId` counts from 256. Shape ids are unique within a slide and start at 2; 1 is the root group.
+   - Numbers. Every EMU value is an integer and no extent is negative. `sz` is an integer from 100 to 400000, `a:spcPts` from 0 to 158400, `a:alpha` from 0 to 100000.
+   - Text. Escape `& < > "`; drop control characters XML 1.0 forbids. Every paragraph ends with `a:endParaRPr` carrying its size, so an empty line keeps its height.
+   - Every part other than `.rels` and media has an `Override` in `[Content_Types].xml`; `rels`, `xml`, `png` and `jpg` have a `Default`. Every relationship target exists.
+
+   How each item is written:
+
+   | Item | Shape |
+   |---|---|
+   | `rect` | `p:sp`, `prstGeom rect`, `a:solidFill` (with `a:alpha` under 1) or `a:noFill`, and `a:ln` or `<a:ln><a:noFill/></a:ln>` |
+   | `line` | `p:cxnSp`, `prstGeom line`, `flipH`/`flipV` on `a:xfrm` for direction, `a:ln` with `cap`; `arrow` adds `<a:tailEnd type="arrow"/>` |
+   | `path` | `p:sp` with `a:custGeom`: one `a:path` of `a:moveTo`, `a:lnTo`…, `a:close`, in EMU relative to the points' bounding box |
+   | `picture` | `p:pic` with `a:blip r:embed`, `<a:stretch><a:fillRect/></a:stretch>`, `descr` from `alt` |
+   | `text` | `p:sp` with `txBox="1"`; `<a:bodyPr wrap="square\|none" lIns tIns rIns bIns anchor="t">` with the four insets 0 or `inset`, and `<a:noAutofit/>`; a `fill` makes it a filled box (sticky notes) |
+   | `table` | `p:graphicFrame` holding `a:tbl`: `<a:tblPr/>`, `a:tblGrid`, one `a:tr h` per row, `a:tc` with `a:txBody` and `a:tcPr marL marR marT marB anchor` |
+
+   A run: `<a:rPr lang sz b i [u="sng"] [baseline="30000"] [spc]>`, a solid fill, an optional `a:highlight`, then `a:latin`, `a:ea` and `a:cs` with the typeface and the fallback hints: `panose="020B0604020202020204" pitchFamily="34"` for a sans, `panose="020B0509040201040103" pitchFamily="49"` for a mono. A paragraph: `<a:pPr [marL indent] algn>` with exact line spacing, `a:spcBef` in points when there is space before, `a:buNone`, and a left tab stop at `tab`.
+
+3. **`collect.ts`: the walk.** For each `.print-page`: its scale is `k = rect.width / W`; every position taken from a rect is `(value − page origin) / k`; every length taken from a computed style (font size, line height, padding, border width, letter-spacing) is already in stage pixels and is not divided. The slide's `bg` is the computed background colour of `.slide`. Then walk the slide's elements in document order, which is paint order closely enough, carrying the product of the ancestors' `opacity` (it becomes the alpha of everything below). Skip `display: none`, `visibility: hidden`, zero opacity, and `.sr-only`. Resolve any CSS colour (including `color-mix()`) to `RRGGBB` plus alpha. Read nothing from a list of layouts: the rules below are about elements, so raw HTML and the `full` layout come through the same way.
+
+   | In the slide | Becomes |
+   |---|---|
+   | A block's own background colour | A `rect` (not for the slide root, whose colour is the slide background) |
+   | Borders | When all four sides match: an outline on that `rect`, inset by half its width (PowerPoint centres a line on the edge). Otherwise one flat-capped `line` per side, centred on the border. Never a thin filled rectangle. |
+   | `.slide-bleed` with a `bg` image | One full-slide `picture`, the image drawn cover and centred with the scrim painted over it in the canvas. With a `bg` colour, nothing: the slide background has it. |
+   | `img` | A `picture` at the area the image actually covers, from `object-fit` and `object-position`: `cover` crops in the canvas, `contain` shrinks the box. |
+   | `video`, `iframe` | A placeholder: a 1px `--line` outline with the file name or URL in DM Mono 13, `--ink-3`, as a missing image has. |
+   | A block with text of its own (a heading, paragraph, caption, cell, `.broken-media`, anything with a direct text node or inline children) | One `text` box at the block's content box. Its inline descendants become runs; its block children are walked on their own. |
+   | A list whose items hold only inline content and nested lists of the same kind | One `text` box for the whole list, a paragraph per item, nested items included. |
+   | A table with no `colspan` or `rowspan` whose cells hold only inline content | One `table`: columns from the first row's cell widths, rows from the `tr` heights, padding and the bottom rule from each cell. |
+   | Any other list or table | Walked as ordinary blocks. A list item's marker is then drawn where the CSS put it: the square as a small `rect`, a dash or number as its own one-line `text` box. |
+   | `pre` | Its tint and border as a `rect`; each `.line.highlighted` band as a `rect`; one `text` box with a paragraph per line and `wrap: false`. Dimmed lines carry their opacity as alpha. A tab becomes two spaces. |
+   | The section number (`.slide[data-layout='section']::before`) | A one-line `text` box: left and width of `.s-main`, its bottom at `.s-main`'s top minus the pseudo-element's computed `margin-bottom`. |
+   | The print page number, `OVERFLOW` | Not exported. PowerPoint numbers slides itself. |
+
+   Text:
+   - **Runs** take their style from the element that holds the text node. Font: `DM Mono` when the first family in `font-family` contains "Mono", else `DM Sans`. Weight 600 and up is bold; 500 is written as regular. Size, italic, colour, `letter-spacing` come straight across. `text-transform: uppercase` is applied to the text itself. A link is underlined and not clickable (§10). `sup` is `superscript` at its parent's size, since viewers shrink a superscript themselves. A background on an inline ancestor (`mark`, inline `code`) is `highlight`, flattened onto the slide's background colour because a highlight has no alpha.
+   - **White space** collapses as CSS does, across run boundaries, with nothing leading or trailing; inside `pre` it is kept. `<br>` is a `break`.
+   - **Wrapping.** Count the lines the browser made (a `Range` per word, comparing tops). One line: `wrap: false`, so a wider substitute font can never push a title onto a second line. Several lines in a block whose `text-wrap-style` (or `text-wrap`) is `balance` (headings, the statement, the quote): put a `break` where the browser broke and set `wrap: false`, because PowerPoint cannot balance and these breaks were chosen. Several lines otherwise: `wrap: true` at the block's width, and PowerPoint reflows the paragraph.
+   - **Line height** is the computed `line-height` in pixels (for `normal`, 1.2 × the font size).
+   - **List paragraphs.** `marginLeft` is the item's content edge minus the list's left edge; `indent` is minus the item's `padding-left`; `tab` equals `marginLeft`. The first run is the marker followed by a tab: for a square bullet `▪` in Arial at the item's size and the square's colour (the one place a third font is named, because DM Sans has no square); for a nested item the pseudo-element's own `content` string (`–`) in its colour; for a numbered item the zero-padded number (honouring `start`) in DM Mono at the pseudo-element's size and colour. `spaceBefore` is the gap between the item's top and the bottom of the previous paragraph's last line.
+
+   Pictures: draw through a canvas at 2× the drawn size, at most 4096 on the long side; store JPEG sources as JPEG at quality 0.92 and everything else as PNG. An SVG with no intrinsic size is drawn at its box. The `key` is the source plus the crop and size, so a picture drawn the same way twice is stored once. A canvas tainted by a cross-origin image cannot be read: export a missing-image placeholder for it and `console.warn`. An animated GIF exports its first frame.
+
+4. **Marks**, when the print view's MARKS toggle is on, come from `marks.data`, not from the DOM, and go on top in this order: strokes, then notes.
+   - Pen and marker: a `path` of the outline polygon. Add `freehandOutline(stroke): number[][]` to `src/lib/strokes.ts` (the `getStroke` call `freehandPath` already makes, without the path string) and have `freehandPath` use it. The pen's fill is its colour token in the slide's theme; the marker's is `--marker` at the opacity `DrawLayer` uses for that theme (0.45 on Paper, 0.6 on Ink). There are no blend modes in a `.pptx`.
+   - Arrow: one round-capped `line` with `arrow: true`. Box: a `rect` with an outline and no fill.
+   - Sticky note: one `text` item with `fill` in the note's colour, `inset: 16`, DM Sans 22 with line height 1.3 in `--note-ink`, `wrap: true`, a paragraph per line of the note's text. No shadow.
+
+   Read the colour tokens from the computed style of the page (`getPropertyValue('--red')` and so on), as the palette is. No hex value is written in `src/` (ground rule 6).
+
+5. **Speaker notes.** `Slide.notes` is HTML. Parse it with `DOMParser` (inert: nothing loads or runs) and take one plain-text paragraph per block; a list item gets a leading `• `.
+
+6. **The button.** In the print bar, after `PRINT`: `<button class="label button" data-pptx-button>PowerPoint</button>`. While it works it is disabled and reads `Exporting`. The file is named after the deck's title with `\ / : * ? " < > |` removed, or the slug when nothing is left, plus `.pptx`; it is saved through a `Blob` of type `application/vnd.openxmlformats-officedocument.presentationml.presentation`, an object URL and a temporary `<a download>`. If the export throws, `console.error` it and show `Export failed` in place of the page count until the next click. Before collecting, wait for `document.fonts.ready` and for every image in the view to decode, and for one animation frame after that so auto-fit has run.
+   - The settings button `Print / PDF` becomes `Print / PDF / PPTX` (check in a screenshot that it fits on one line; if not, `PDF / PPTX`). Update the two tests that find it by name.
+   - README: the `PDF` section becomes `PDF and PowerPoint`, with one short paragraph: what the button gives; that text stays editable; that DM Sans and DM Mono should be installed for the text to sit as it does in dex (both are free on Google Fonts, and Google Slides has them built in); and what does not come across (builds, transitions, video, clickable links). Keep the README under 250 lines.
+
+7. **Tests.**
+   - `zip.test.ts`: `crc32` of `123456789` is `0xCBF43926`; a written archive reads back with a small store-only reader in the test (names in order, bytes equal, CRCs right); a non-ASCII name survives.
+   - `write.test.ts`, on small hand-made models: every part has a content type and every relationship target exists; slide and notes parts are counted right, and no notes master without notes; each item kind produces its shape; a run's attributes and child order; escaping; a picture with a repeated `key` is stored once; the slide size for 16:9 and 4:3.
+   - `e2e/pptx.spec.ts`, reading the downloaded file with a store-only reader (put it in `e2e/`, beside `temp-deck.ts`) and checking that every XML part parses in the page with `DOMParser` and no `parsererror`. On the demo deck: the file is `dex.pptx`; 22 slides at 15240000 × 8572500, 23 with SKIPPED SLIDES on; slide 1 holds the runs `dex` in DM Sans and `MARKDOWN IN, DECK OUT` in DM Mono; the statement slide has an `a:br`; the gallery slide has three pictures; the table slide an `a:tbl` with seven rows; the code slide six mono paragraphs; every slide has a notes part. On a temporary 4:3 deck with marks (`decks/zz-e2e-pptx`): 11430000 wide; a freeform for the pen stroke, an arrow line, and the sticky note's text in a filled box; none of them with MARKS off. Positions do not depend on the window: the first slide's `a:off` values from a 1000px-wide window and an 1800px-wide one agree within 9525 EMU.
+   - `e2e/static.spec.ts`: the export downloads a file from the built site under `/dex/` (the lazy chunk loads under a subpath).
+
+8. **Check it for real**, and record each result in §11:
+   - Validate a demo export against the OOXML schemas with any validator (the spike used the `validate.py` of Anthropic's `pptx` skill, which needs `lxml` and `defusedxml`).
+   - On macOS, render it: `qlmanage -t -s 1600 -o <dir> <file>.pptx` draws a file's first slide, so write single-slide files from a throwaway script to see the others. Compare at least the title, a list, the columns, the table, the code, a split, the gallery, the background-image slide and a slide with marks against screenshots of the print view, in both themes.
+   - Say plainly what was not opened: PowerPoint, Keynote, Google Slides.
+
+Acceptance:
+
+- `pnpm check`, `pnpm test`, `pnpm test:e2e` and `pnpm build` pass.
+- `PowerPoint` in the print view downloads a `.pptx` of exactly the pages shown, honouring both toggles, under `pnpm start` and from a static build.
+- The demo export passes schema validation, and its renders match the print view: the same layout, colours and line breaks in headings, with only the typeface differing on a machine without DM Sans.
+- Text is text: a title is one text box, a simple list is one text box with a paragraph per item, a simple table is a table.
+- No dependency added, `shared/types.ts` unchanged, no hex colour in `src/`.
+- §0 is ticked and §11 says what was verified, in what, and what was not.
+
 ---
 
 ## 10. Backlog (after v1)
@@ -1221,6 +1370,7 @@ Acceptance:
 - Phone remote over the local network.
 - Sync the laser pointer to the audience window.
 - Export a slide with its marks as a PNG.
+- PowerPoint export, further: embed DM Sans and DM Mono in the file; builds as PowerPoint animations; clickable links (PowerPoint recolours a hyperlink from the theme, which hides it on an Ink slide, so it needs the `ahyp:hlinkClr` extension); videos as media rather than a placeholder; `pnpm pptx <slug>` from the command line with Playwright.
 
 ---
 
@@ -1236,6 +1386,9 @@ Acceptance:
 | Marks storage | `decks/<slug>/marks.json`, written by the dev server, so marks survive browsers and can be committed | Browser storage only. Add `marks.json` to `.gitignore` if they should stay local. |
 | Color in the UI | One accent, orange-red, and only in draw mode (the active tool's underline and `DONE`), as in the reference. Otherwise red and blue exist only as pen colors; yellow, pink, and blue only as sticky notes. | Use the accent elsewhere in the chrome, or nowhere. |
 | Draw tools | Pen, marker, arrow, box, eraser. Arrow and box were added because the reference's draw bar has them. | Drop arrow and box to make Phase 6 smaller. |
+| PowerPoint export (Phase 11) | Editable shapes measured from the print view: text stays text, tables stay tables. The price is that text is set in whatever font the viewer has, so without DM Sans it wraps differently. | One full-slide picture per slide: exact, but nothing can be edited, which is a PDF in a `.pptx` wrapper. It needs a rasteriser (a dependency, or Playwright from the command line). |
+| PowerPoint writer (Phase 11) | Hand-written OOXML and a store-only ZIP: no dependency, and every element is under our control. | `pptxgenjs` (which brings `jszip`), in a lazy chunk: less code to own, and tested against PowerPoint itself. Switch if PowerPoint reports a file it has to repair and the cause is not found quickly. |
+| List markers in PowerPoint (Phase 11) | Typed as text with a tab and a hanging indent, so they sit in the same place in every viewer. | Native bullets (`a:buChar`): pressing Enter in PowerPoint makes the next bullet, but Quick Look (Finder, Mail, iOS) draws them outside the text box. |
 
 ### Deviations log
 
@@ -1351,3 +1504,14 @@ Executors: add a line here whenever the implementation differs from this plan. F
 - Phase 10 — left as is: the laser streak shows faint steps where its segment widths change; on a `bg` slide with a light picture the demo's paragraph runs over the plate's black square (readable, as Ink text on black); the marker on Ink is muted (see above); the presenter's right column has space under the timer at 1280×800.
 - 2026-11-13 — keyboard-shortcuts screen (after Phase 10): `?` opens `KeysView.svelte`, a full-window overlay that is a sibling of the overview (same header, `--bg`, fade, dialog and focus handling) and lists every key in five groups (Move, View, Draw and notes, Zoom, Present). `Overlay` gains `'keys'`; the registry gains the `keys` command (`?`, with the Phase 5 commands), implemented in `overlays.ts` and, like `source`, inert on the presenter and print routes (`NOT_ON_PRESENTER` in `presenter.ts`). `ESCAPE_RANK.keys` is 15, between settings and overview. The list is `src/lib/key-help.ts`, which takes keys and titles from the registry (a row may override them; pinch, ⌘/Ctrl + wheel and drag are static rows); `key-help.test.ts` fails if a command with keys is left off. The settings sheet keeps its cheat sheet and gains an `All keys` button. README key table gains the `?` row. `shared/types.ts` is unchanged.
 - 2026-11-13 — settings KEYS (owner request): the six-line cheat sheet is gone; the section is a `Keyboard shortcuts` button and the line `or press ? at any time`. The full list lives only on the `?` screen.
+- 2026-11-13 — PowerPoint export planned (by the planner, before Phase 11): §0 gains the Phase 11 row, §1 moves PPTX out of "Not in v1", §2 gains the `src/lib/pptx/` folder and a second list of spike results, §9 gains Phase 11, §10 the follow-ups, and the decisions table above three rows. No dependency is added and `shared/types.ts` does not change. The spike was thrown away; nothing from it is in the repository.
+- Phase 11 — files as planned (`src/lib/pptx/model.ts`, `collect.ts`, `write.ts`, `zip.ts`, `index.ts`), plus `collect.test.ts` (the colour parser, which needs no DOM) beside the planned `zip.test.ts` and `write.test.ts`, and `e2e/unzip.ts` and `e2e/pptx.spec.ts`. The exporter is its own chunk in a build (`assets/pptx-*.js`, 34 kB); the page a presenter loads does not include it. No dependency added, `shared/types.ts` unchanged. `src/lib/strokes.ts` gains `freehandOutline` (used by `freehandPath`) and `MARKER_OPACITY`, the two numbers `DrawLayer`'s `.marker` rule holds.
+- Phase 11 — the model is as specified with one addition: `PptxRun.strike` (written as `strike="sngStrike"`), because `~~struck~~` text otherwise exports as plain text, which changes what a slide says. Entry points: `collectDeck({ root, title, author, lang, size, slides, marks })`, `writePptx(deck)`, `exportPptx({ root, deck, marks })` and `pptxFileName(title, slug)`. A paragraph has no size of its own, so `a:endParaRPr` takes the size of the paragraph's first run, or of the text before it when the line is empty.
+- Phase 11 — writer, three things the plan did not have, each found by rendering in Quick Look and each still schema-valid. (1) A line break is written `<a:br><a:rPr sz=…/></a:br>` with the size of the text before it, as PowerPoint itself writes it. After a bare `<a:br/>` Quick Look adds about a quarter of the font size to the line pitch: the statement slide's second line sat 26 stage pixels low, and the spike's own file does the same; with the size it is within 3. (2) A rectangle with an outline wider than 1px and no fill gets a fully transparent fill in the outline's colour instead of `a:noFill`. Quick Look draws a rectangle's outline as a hairline whatever its `w`, unless the fill carries an `a:alpha` (measured with ten variants); this is what makes a box mark look 6px wide in a Finder preview. In PowerPoint the only difference is that a click inside the box selects it. Hairline borders keep `a:noFill`; a rectangle with an opaque fill and a thick uniform border still shows a hairline in Quick Look. (3) EMU values round away from zero, so a hanging `indent` is exactly minus its `marL`.
+- Phase 11 — collector, where the plan left room. A list is "simple" when its items hold inline content and simple nested lists of either kind (the demo's numbered list has a dashed sub-list), not only the same kind. A text box sits at the block's content box, except where the text is not at its top: in a flex or grid box (`.broken-media`), after a block child, or in a cell of a walked table that is not top-aligned, the box is put where the lines were measured. An inline-block with a background becomes a rectangle under the text, which is how a highlighted code line gets its band, in any block. A task-list checkbox is written as `☑` or `☐`. A picture inside a translucent ancestor is stored as PNG with the opacity drawn in. A sticky note's position, width, colour and text come from the marks data, but its height is read from the note the print view has laid out, since a note grows with wrapped text and `Note.h` is only its least height. The palette for the theme part is read from the print view's root (the deck's theme), with translucent tokens flattened onto `--bg`.
+- Phase 11 — the button: `POWERPOINT` after `PRINT`, disabled and reading `EXPORTING` while it works, and disabled for a deck with no slides. `EXPORT FAILED` replaces the page count until the next click anywhere. The settings button is `PRINT / PDF / PPTX` and fits on one line (checked in a screenshot). README: `PDF and PowerPoint`, 236 lines.
+- Phase 11 — tests. Unit: `zip.test.ts` (6), `write.test.ts` (30), `collect.test.ts` (2). `e2e/pptx.spec.ts` (7): the demo deck exported with MARKS off, so nothing depends on marks drawn on it; the 4:3 marks deck `decks/zz-e2e-pptx`; positions from a 1000px and an 1800px window; and the button's busy and failed states, by holding back and then aborting the exporter's module. `e2e/static.spec.ts` gains the export from the build under `/dex/`, checking that the chunk is fetched from `/dex/assets/`. Two test files hold `RRGGBB` strings as fixture data for the model; no other file under `src/` holds a hex colour. One Phase 5 test (`the later-phase buttons are there`) expected `CLEAR ALL` to be disabled on the demo deck and so failed on any machine with a `decks/demo/marks.json`; it now answers that file with a 404 for itself.
+- Phase 11 — checked for real. Schema: the demo export in Paper and in Ink, and a 4:3 Ink deck of odd cases (loose and task lists, a table with a merged cell, video, iframe, a missing image, JPEG, a `bg` colour, raw HTML in the `full` layout, every kind of mark), all pass `validate.py` from Anthropic's `pptx` skill (XSD, ISO/IEC 29500 transitional) and read back through `python-pptx` (every shape, table, picture and notes slide). Rendering: every slide of those three written as a single-slide file, drawn by Quick Look (`qlmanage`) and laid beside a screenshot of its print page. Layout, colours, pictures (cover, contain, the `bg` scrim), rules, tables, code bands, section numbers, captions, marks and heading line breaks match; a cross-origin picture exports as a labelled frame with a console warning; the model from a 1000px window and an 1800px one agree to 0.001 stage pixels. Collecting 22 slides takes about 140ms and the whole export about 200ms.
+- Phase 11 — what Quick Look draws differently, none of it fixable in the file without leaving standard markup (§2's spike list is too generous on these). It ignores tab stops: a tab is a fixed advance of about one em of the run it is in. So after a typed marker the first line's text does not start exactly at the hanging indent: about 2px right for a square bullet, 5px left for a number, 7px right for a nested dash, 8px left for a footnote's number; wrapped lines are exact. (A footnote's first line is also 5px left of the browser's in the file itself: the browser sets a space between the number and the text of a loose item.) This is still far closer than native bullets, which land outside the box. It ignores `a:alpha` on text (dimmed code lines and text under an `opacity` draw at full strength), `baseline` (a footnote reference sits on the line) and `a:highlight` (inline code and `mark` have no tint). It lays tables out its own way: about 10px of padding in the first column where the file says 0, and the header row about 7px shorter, with the table's total height right. Line spacing drifts by about 1px per item on a long list (16px over the fourteen-bullet slide). All of this is as written in the file and should be right in PowerPoint; it was not seen there.
+- Phase 11 — not exported: inline SVG and `canvas` elements, CSS background images other than a slide's `bg`, borders and padding on inline elements, `sub` as a subscript (it is small text on the line), an `iframe`'s content (a frame with its address, even where the browser shows nothing), and clipping (text that overflows `.s-main` or a `pre` runs on). A pen stroke is the polygon of its outline points, not the curve the browser draws through them: the demo's hand-drawn marker stroke matches, and a stroke of a few far-apart points, such as a test's, is visibly angular. An arrow has PowerPoint's own head, which Quick Look fills in.
+- Phase 11 — not opened: Microsoft PowerPoint, Keynote, Google Slides and LibreOffice. PowerPoint and LibreOffice are not installed here, and Keynote was not launched on the owner's desktop. So "PowerPoint opens it without a repair prompt" rests on the schema check and `python-pptx`, and how text sits with DM Sans installed has not been seen anywhere.

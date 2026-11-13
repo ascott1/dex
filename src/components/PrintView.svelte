@@ -5,6 +5,9 @@
   // the print controls; in print the bar is hidden and every page is exactly
   // the deck's stage size (print.css). Marks are drawn from the print view's
   // own toggle, not the MARKS setting. No camera: print never zooms.
+  //
+  // POWERPOINT (§9 Phase 11) exports the same pages as a .pptx by measuring
+  // them here, so it honours the same toggles, text size and theme.
   import { stageSize } from '../lib/stage';
   import { deck } from '../state/deck.svelte';
   import { marks } from '../state/marks.svelte';
@@ -32,6 +35,35 @@
   const SIDE = 24;
   const k = $derived(viewWidth > 0 ? Math.min(1, (viewWidth - 2 * SIDE) / size.W) : 1);
 
+  // PowerPoint export. The exporter is loaded on the first click.
+  let view: HTMLElement | undefined = $state();
+  let exporting = $state(false);
+  let exportFailed = $state(false);
+
+  async function exportPptx() {
+    const current = deck.current;
+    if (exporting || !current || !view) return;
+    exporting = true;
+    exportFailed = false;
+    try {
+      const pptx = await import('../lib/pptx');
+      await pptx.exportPptx({ root: view, deck: current, marks: includeMarks ? $state.snapshot(marks.data) : null });
+    } catch (error) {
+      console.error('dex: the PowerPoint export failed', error);
+      exportFailed = true;
+    } finally {
+      exporting = false;
+    }
+  }
+
+  // "Export failed" stands in for the page count until the next click anywhere.
+  $effect(() => {
+    if (!exportFailed) return;
+    const clear = () => (exportFailed = false);
+    document.addEventListener('click', clear, { capture: true, once: true });
+    return () => document.removeEventListener('click', clear, { capture: true });
+  });
+
   // The page size has to be the deck's stage size, which a stylesheet cannot
   // read from a custom property, so the @page rule is written here.
   $effect(() => {
@@ -45,6 +77,7 @@
 
 <div
   class="print-view"
+  bind:this={view}
   bind:clientWidth={viewWidth}
   style:--W="{size.W}px"
   style:--H="{size.H}px"
@@ -63,7 +96,7 @@
         <span class="print-square" aria-hidden="true"></span>
         <span class="label">{deck.current.meta.title}</span>
         <span class="label print-count" data-print-count>
-          {slides.length} {slides.length === 1 ? 'page' : 'pages'}
+          {#if exportFailed}Export failed{:else}{slides.length} {slides.length === 1 ? 'page' : 'pages'}{/if}
         </span>
       </div>
       <div class="print-actions">
@@ -84,6 +117,14 @@
           >Skipped slides</button>
         {/if}
         <button class="label button" type="button" data-print-button onclick={() => window.print()}>Print</button>
+        <button
+          class="label button"
+          type="button"
+          data-pptx-button
+          title="Save these pages as a PowerPoint file"
+          disabled={exporting || slides.length === 0}
+          onclick={exportPptx}
+        >{exporting ? 'Exporting' : 'PowerPoint'}</button>
       </div>
     </header>
 

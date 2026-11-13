@@ -5,7 +5,7 @@
 // run against both.
 
 import { spawn, type ChildProcess, execFileSync } from 'node:child_process';
-import { createReadStream, mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { createReadStream, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { tmpdir } from 'node:os';
 import { extname, join, normalize, sep } from 'node:path';
@@ -14,6 +14,7 @@ import { expect, test, type Page } from '@playwright/test';
 import type { Marks } from '../shared/types.ts';
 import { counter, current, demoDeckTests, open } from './navigation.ts';
 import { removeTempDecks } from './temp-deck.ts';
+import { unzip } from './unzip.ts';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const VITE = join(ROOT, 'node_modules', 'vite', 'bin', 'vite.js');
@@ -180,6 +181,29 @@ test.describe('static build', () => {
     await page.goto(`./#/demo/print`);
     await expect(page.locator('.print-sheet')).toHaveCount(22);
     await expect(page.locator('.print-sheet [data-stroke]')).toHaveCount(1);
+  });
+
+  test('the PowerPoint export works from the static build: its lazy chunk loads under the subdirectory', async ({ page }) => {
+    const scripts: { url: string; status: number }[] = [];
+    await page.goto(`./#/demo/print`);
+    await expect(page.locator('.print-sheet')).toHaveCount(22);
+    await page.evaluate(() => document.fonts.ready);
+    // From here on, any script that loads is the exporter's chunk.
+    page.on('response', (r) => {
+      if (/\.js(\?|$)/.test(r.url())) scripts.push({ url: r.url(), status: r.status() });
+    });
+    const [download] = await Promise.all([page.waitForEvent('download'), page.locator('[data-pptx-button]').click()]);
+    expect(download.suggestedFilename()).toBe('dex.pptx');
+    const parts = unzip(readFileSync(await download.path()));
+    expect([...parts.keys()].filter((name) => /^ppt\/slides\/slide\d+\.xml$/.test(name))).toHaveLength(22);
+    // The bundled marks.json has one box, and the print view shows marks by default.
+    expect(new TextDecoder().decode(parts.get('ppt/slides/slide4.xml'))).toContain('name="Rectangle ');
+
+    expect(scripts.length).toBeGreaterThan(0);
+    for (const script of scripts) {
+      expect(script.url.startsWith(`${SUBDIR_URL}assets/`), script.url).toBe(true);
+      expect(script.status, script.url).toBe(200);
+    }
   });
 
   test('the presenter window opens from the static build and the two windows drive each other', async ({ page, context }) => {

@@ -261,7 +261,7 @@
       </dl>
       <div class="buttons">
         <button class="label button" type="button" onclick={openPresenter}>Presenter</button>
-        <button class="label button" type="button" onclick={openPrint}>Print / PDF</button>
+        <button class="label button" type="button" onclick={openPrint}>Print / PDF / PPTX</button>
       </div>
     </div>
   </div>
