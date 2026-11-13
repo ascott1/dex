@@ -95,3 +95,15 @@ body {
 .icon-btn:hover {
   border-color: var(--ink);
 }
+
+/* Over a background image (data-bg="image") the chrome sits on the picture:
+   labels step up one level, --ink-3 → --ink-2 and --ink-4 → --ink-3; the
+   hairlines stay. --ink-4 is resolved on .app from the inherited --ink-3, and
+   --ink-3 is replaced one level down, so the two steps do not chain. */
+.app[data-over-image] {
+  --ink-4: var(--ink-3);
+}
+
+.app[data-over-image] > * {
+  --ink-3: var(--ink-2);
+}

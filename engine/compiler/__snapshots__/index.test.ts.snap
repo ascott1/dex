@@ -214,7 +214,9 @@ exports[`demo deck > matches the snapshot 1`] = `
       "title": "A grid of squares Concentric squares Lines of different leng",
     },
     {
-      "attrs": {},
+      "attrs": {
+        "data-len": "m",
+      },
       "hash": "fc672a6770",
       "html": "<div class="s-main"><div class="s-body"><blockquote>
 <p>Simplicity is about subtracting the obvious and adding the meaningful.</p>

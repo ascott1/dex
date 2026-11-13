@@ -17,7 +17,18 @@ export default defineConfig({
     reducedMotion: 'reduce',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1600, height: 900 } } },
+    // The smoke tests (`pnpm test:e2e`). The screenshot spec is left out so they stay fast.
+    {
+      name: 'chromium',
+      testIgnore: /shots\.spec\.ts$/,
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1600, height: 900 } },
+    },
+    // `pnpm shots` only: the only thing that writes to docs/shots/.
+    {
+      name: 'shots',
+      testMatch: /shots\.spec\.ts$/,
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1600, height: 900 }, deviceScaleFactor: 1 },
+    },
   ],
   webServer: {
     // Plain vite, not `pnpm start`, so no browser tab opens on the machine.

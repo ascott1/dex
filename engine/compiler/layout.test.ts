@@ -152,6 +152,13 @@ describe('layout details', () => {
     expect((await at('x'.repeat(101))).attrs['data-len']).toBe('l');
   });
 
+  it('quote data-len: l over 140 characters, the attribution not counted', async () => {
+    const q = (n: number) => `> ${'x'.repeat(n)}\n>\n> — Someone with a long name to push it over`;
+    expect((await at(q(140))).attrs['data-len']).toBe('m');
+    expect((await at(q(141))).attrs['data-len']).toBe('l');
+    expect((await at(`> ${'y'.repeat(70)}\n>\n> ${'y'.repeat(70)}`)).attrs['data-len']).toBe('l');
+  });
+
   it('a layout directive overrides inference', async () => {
     expect((await at('<!-- layout: statement -->\n\n## H\n\nText.')).layout).toBe('statement');
   });

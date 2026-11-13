@@ -59,6 +59,8 @@
 
   // Effective theme on <html>: the bars and the letterbox follow the slide (§7).
   const theme = $derived(slideTheme(deck.current?.slides[nav.index]));
+  // The chrome sits on a picture: its labels step up one level (§9 Phase 4, task 6).
+  const overImage = $derived(deck.current?.slides[nav.index]?.attrs['data-bg'] === 'image');
   $effect(() => {
     document.documentElement.dataset.theme = theme;
   });
@@ -113,6 +115,8 @@
   data-chrome={chrome}
   data-tool={ui.tool ?? undefined}
   data-view={route.view}
+  data-over-image={overImage ? '' : undefined}
+  data-dev={import.meta.env.DEV ? '' : undefined}
 >
   {#if route.view === 'index'}
     <DeckIndex />

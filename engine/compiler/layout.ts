@@ -108,6 +108,22 @@ function lenClass(chars: number): string {
   return 'l';
 }
 
+/**
+ * Characters in a quote, without its attribution (the paragraph `regions.ts`
+ * marked with class `attrib`). Over 140 the quote is set smaller (§8 "Type").
+ */
+function quoteChars(quote: MdBlock): number {
+  const children = 'children' in quote ? (quote.children as MdBlock[]) : [];
+  return children
+    .filter((child) => {
+      const cls = (child.data as { hProperties?: { className?: unknown } } | undefined)?.hProperties?.className;
+      return !(Array.isArray(cls) && cls.includes('attrib'));
+    })
+    .map((child) => toString(child).replace(/\s+/g, ' ').trim())
+    .join(' ')
+    .length;
+}
+
 const DEFAULT_FIT: Partial<Record<LayoutName, 'cover' | 'contain'>> = {
   image: 'cover',
   split: 'cover',
@@ -132,6 +148,10 @@ export function computeAttrs(
   if (layout === 'statement') {
     const p = a.blocks.find((b) => b.type === 'paragraph');
     attrs['data-len'] = lenClass(p ? toString(p).trim().length : 0);
+  }
+  if (layout === 'quote') {
+    const quote = a.blocks.find((b) => b.type === 'blockquote');
+    if (quote) attrs['data-len'] = quoteChars(quote) > 140 ? 'l' : 'm';
   }
   if (layout === 'gallery') attrs['data-count'] = String(a.images);
   if (layout === 'columns') attrs['data-count'] = String(count);

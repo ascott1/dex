@@ -1,25 +1,37 @@
-/* Slide basics (§9 Phase 3 task 10): the slide box, safe area, type roles,
-   builds, and the cross-fade. Inside the stage every size is a logical pixel on
-   the W×H canvas (ground rule 7). Phase 4 does the design proper. */
+/* Slides (§8): the slide box, the two size multipliers, builds, the type roles,
+   and every content element. Geometry per layout is in layouts.css, code in
+   code.css. Inside the stage every size is a logical pixel on the W×H canvas
+   (ground rule 7). Every font size is calc(<size> * var(--ts) * var(--density)). */
 
+/* Text size, from data-text on .app (§8 "Type"). Outside an .app it is Regular. */
+:root { --ts: 1; }
 [data-text='quiet'] { --ts: 0.7; }
 [data-text='regular'] { --ts: 1; }
 [data-text='loud'] { --ts: 1.25; }
 
 .slide {
+  /* Auto-fit density (§7), stepped by SlideView through data-density. */
   --density: 1;
-  /* Safe margins: 128 left and right on a 1600 stage (8% of the width), 112 top, 104 bottom. */
-  --m-x: calc(var(--W, 1600px) * 0.08);
+
+  /* Stage and safe margins (§8 "Slide geometry"): 128 left and right on a
+     1600 stage, which is 8% of the width on every aspect; 112 top, 104 bottom. */
+  --w: var(--W, 1600px);
+  --h: var(--H, 900px);
+  --m-x: calc(var(--w) * 0.08);
   --m-top: 112px;
   --m-bottom: 104px;
-  /* Font size for a role: calc(<size> * var(--ts) * var(--density)). */
-  --fs: calc(var(--ts, 1) * var(--density));
+  --safe-w: calc(var(--w) - 2 * var(--m-x));
+  /* The content column of default, columns, figure, and gallery: 1190 at Quiet
+     (left edge at 13% of 1600), the full safe area at Regular and Loud. */
+  --col: min(var(--safe-w), calc(1700px * var(--ts)));
+  /* Space between the head and what follows it: 0.6em of the slide title. */
+  --head-gap: calc(60px * 0.6 * var(--ts) * var(--density));
 
   position: absolute;
   top: 0;
   left: 0;
-  width: var(--W, 1600px);
-  height: var(--H, 900px);
+  width: var(--w);
+  height: var(--h);
   padding: var(--m-top) var(--m-x) var(--m-bottom);
   display: flex;
   flex-direction: column;
@@ -28,16 +40,19 @@
   color: var(--ink);
   font-family: var(--font-sans);
   font-optical-sizing: auto;
-  font-size: calc(26px * var(--fs));
+  font-weight: 400;
+  /* Body role: every em below without its own font size is a body em. */
+  font-size: calc(26px * var(--ts) * var(--density));
   line-height: 1.45;
   text-align: left;
+  -webkit-font-smoothing: antialiased;
 }
 
 .slide[data-density='1'] { --density: 0.86; }
 .slide[data-density='2'] { --density: 0.74; }
 
 /* Stacked in .slides: only .current is visible; neighbours stay laid out so
-   their images are loaded. The transition is an opacity cross-fade. */
+   their images are loaded. The transition is an opacity cross-fade (§8 "Motion"). */
 .slides > .slide {
   opacity: 0;
   visibility: hidden;
@@ -62,7 +77,7 @@
   transition: none;
 }
 
-/* Builds: pending elements keep their space. */
+/* Builds: pending elements keep their space; a step fades in and rises 8px. */
 .slide [data-step] {
   transition:
     opacity var(--t-slow) var(--ease),
@@ -74,188 +89,122 @@
   transform: translateY(8px);
 }
 
-/* Regions (§6 HTML contract). */
+/* ── Regions (§6 HTML contract). Layout geometry is in layouts.css. ── */
+
 .slide .s-main {
   position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
-  width: min(100%, calc(1700px * var(--ts, 1)));
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  /* Auto-fit measures this box: it needs a definite height and must clip. */
+  overflow: hidden;
+}
+
+.slide .s-head {
+  flex: none;
 }
 
 .slide .s-body {
-  margin-top: calc(36px * var(--fs));
   max-width: 36em;
 }
 
-.slide .s-head + .s-body:first-child,
-.slide .s-body:first-child {
-  margin-top: 0;
+.slide .s-head + .s-body,
+.slide .s-head + .s-lede,
+.slide .s-head + .s-cols {
+  margin-top: var(--head-gap);
 }
 
-.slide[data-layout='title'] .s-main,
-.slide[data-layout='section'] .s-main {
-  width: min(100%, calc(1080px * var(--ts, 1)));
-  justify-content: center;
+/* ── Type roles (§8 "Type") ── */
+
+.slide h1,
+.slide h2,
+.slide h3,
+.slide h4,
+.slide h5 {
+  color: var(--ink);
+  text-wrap: balance;
 }
 
-.slide[data-layout='statement'] .s-main {
-  width: min(100%, calc(1240px * var(--ts, 1)));
-  justify-content: center;
-}
-
-.slide[data-layout='quote'] .s-main {
-  width: min(100%, calc(1160px * var(--ts, 1)));
-  justify-content: center;
-}
-
-.slide[data-align='center'] .s-main {
-  justify-content: center;
-}
-
-/* Type roles (§8 "Type"). */
+/* Display */
 .slide h1 {
-  font-size: calc(80px * var(--fs));
+  font-size: calc(80px * var(--ts) * var(--density));
   line-height: 1.02;
   font-weight: 500;
-  letter-spacing: -0.03em;
+  /* §8 says -0.03em; at the display optical size letters touched (§11). */
+  letter-spacing: -0.015em;
 }
 
+/* Slide title */
 .slide h2 {
-  font-size: calc(60px * var(--fs));
+  font-size: calc(60px * var(--ts) * var(--density));
   line-height: 1.08;
   font-weight: 400;
-  letter-spacing: -0.02em;
+  /* §8 says -0.02em; see h1 (§11). */
+  letter-spacing: -0.01em;
 }
 
+/* Subhead */
 .slide h3 {
-  font-size: calc(30px * var(--fs));
+  font-size: calc(30px * var(--ts) * var(--density));
   line-height: 1.15;
   font-weight: 500;
   letter-spacing: -0.01em;
 }
 
-.slide h4 {
-  font-size: calc(22px * var(--fs));
-  line-height: 1.2;
-  font-weight: 500;
-}
-
+/* Small subhead (h5 has no role of its own and borrows this one) */
+.slide h4,
 .slide h5 {
-  font-size: calc(22px * var(--fs));
+  font-size: calc(22px * var(--ts) * var(--density));
   line-height: 1.2;
   font-weight: 500;
+  letter-spacing: 0;
 }
 
+/* Eyebrow, and the section number drawn like one (layouts.css) */
 .slide h6 {
   font-family: var(--font-mono);
-  font-size: max(11px, calc(13px * var(--fs)));
+  font-size: max(11px, calc(13px * var(--ts) * var(--density)));
   line-height: 1.2;
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-2);
-  margin-bottom: 1.6em;
 }
 
+.slide .s-head h6 {
+  margin-bottom: 1.8em;
+}
+
+/* Body */
 .slide p,
 .slide li {
-  font-size: calc(26px * var(--fs));
-  line-height: 1.45;
+  text-wrap: pretty;
 }
 
-.slide p + p,
-.slide p + ul,
-.slide p + ol,
-.slide ul + p,
-.slide ol + p {
-  margin-top: 0.6em;
+/* Flow inside the body: blocks are separated by 0.75 of a body line. */
+.slide .s-body > * + *,
+.slide .s-lede > * + *,
+.slide .s-col > * + * {
+  margin-top: 0.75em;
 }
 
-.slide ul,
-.slide ol {
-  padding-left: 1.35em;
-}
-
-.slide li + li {
-  margin-top: 0.65em;
-}
-
-.slide li ul,
-.slide li ol {
-  margin-top: 0.4em;
-}
-
-.slide li li {
-  font-size: calc(21px * var(--fs));
-  line-height: 1.4;
-  color: var(--ink-2);
-}
-
-.slide li li + li {
-  margin-top: 0.3em;
-}
-
-.slide strong {
-  font-weight: 700;
-}
-
-.slide a {
-  color: var(--ink);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.18em;
-}
-
-.slide[data-layout='title'] .s-body,
-.slide[data-layout='section'] .s-body {
-  margin-top: 1.4em;
-}
-
-.slide[data-layout='title'] .s-body p,
-.slide[data-layout='section'] .s-body p {
-  font-size: calc(27px * var(--fs));
-  line-height: 1.5;
-}
-
-/* Statement: very large type by length (data-len). */
-.slide[data-layout='statement'] .s-body {
-  max-width: none;
-}
-
-.slide[data-layout='statement'] p {
-  font-weight: 500;
-  letter-spacing: -0.03em;
-}
-
-.slide[data-layout='statement'][data-len='xs'] p:first-child { font-size: calc(240px * var(--fs)); line-height: 0.9; }
-.slide[data-layout='statement'][data-len='s'] p:first-child { font-size: calc(104px * var(--fs)); line-height: 1; }
-.slide[data-layout='statement'][data-len='m'] p:first-child { font-size: calc(72px * var(--fs)); line-height: 1.08; }
-.slide[data-layout='statement'][data-len='l'] p:first-child { font-size: calc(48px * var(--fs)); line-height: 1.15; }
-
-.slide[data-layout='statement'] p + p {
+.slide .s-body > * + :is(h3, h4, h5),
+.slide .s-lede > * + :is(h3, h4, h5) {
   margin-top: 1.2em;
-  font-family: var(--font-mono);
-  font-size: max(11px, calc(16px * var(--fs)));
-  font-weight: 400;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ink-2);
 }
 
-/* Quote */
-.slide[data-layout='quote'] blockquote p {
-  font-size: calc(44px * var(--fs));
-  line-height: 1.2;
-  letter-spacing: -0.015em;
+.slide .s-body > :is(h3, h4, h5) + *,
+.slide .s-col > :is(h3, h4, h5) + * {
+  margin-top: 0.5em;
 }
 
+/* Caption role: figcaption, attribution, table header */
 .slide figcaption,
 .slide .attrib,
 .slide th {
   font-family: var(--font-mono);
-  font-size: max(11px, calc(13px * var(--fs)));
+  font-size: max(11px, calc(13px * var(--ts) * var(--density)));
   line-height: 1.3;
   font-weight: 400;
   letter-spacing: 0.12em;
@@ -263,11 +212,146 @@
   color: var(--ink-2);
 }
 
-.slide blockquote .attrib {
-  margin-top: 40px;
+.slide strong,
+.slide b {
+  font-weight: 700;
 }
 
-/* Tables and code: readable, not designed (Phase 4). */
+.slide em,
+.slide i {
+  font-style: italic;
+}
+
+.slide a {
+  color: var(--ink);
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+.slide mark {
+  color: inherit;
+  background-color: color-mix(in srgb, var(--marker) 60%, transparent);
+}
+
+.slide sup,
+.slide sub {
+  font-size: 0.6em;
+  line-height: 0;
+}
+
+.slide sup a[data-footnote-ref] {
+  text-decoration: none;
+  font-family: var(--font-mono);
+  padding-left: 0.15em;
+}
+
+.slide hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+/* ── Lists ── */
+
+.slide ul,
+.slide ol {
+  list-style: none;
+  padding: 0;
+}
+
+.slide li {
+  position: relative;
+  padding-left: 1.35em;
+}
+
+.slide li + li {
+  margin-top: 0.65em;
+}
+
+/* Bullet: a solid ink square 0.3em on a side, centred on the first line. */
+.slide ul > li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: calc((1lh - 0.3em) / 2);
+  width: 0.3em;
+  height: 0.3em;
+  background-color: var(--ink);
+}
+
+/* Numbers: DM Mono, zero-padded, 0.6em, --ink-3, on the first line's baseline.
+   The marker is inline, so an item whose text is a paragraph (a loose list,
+   a footnote) keeps that paragraph on the marker's line. */
+.slide ol {
+  counter-reset: item;
+}
+
+.slide ol > li {
+  counter-increment: item;
+}
+
+.slide ol > li > p:first-child {
+  display: inline;
+}
+
+.slide ol > li > p:first-child + * {
+  margin-top: 0.45em;
+}
+
+.slide ol > li::before {
+  content: counter(item, decimal-leading-zero);
+  display: inline-block;
+  /* 1.35em of the item, in the marker's own 0.6em. */
+  width: calc(1.35em / 0.6);
+  margin-left: calc(-1.35em / 0.6);
+  font-family: var(--font-mono);
+  font-size: 0.6em;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Nested lists: Small role, an en dash for bullets. */
+.slide li > ul,
+.slide li > ol {
+  margin-top: 0.45em;
+}
+
+.slide li li {
+  font-size: calc(21px * var(--ts) * var(--density));
+  line-height: 1.4;
+  color: var(--ink-2);
+  padding-left: 1.1em;
+}
+
+.slide li li + li {
+  margin-top: 0.3em;
+}
+
+.slide li > ul > li::before {
+  content: '–';
+  top: 0;
+  width: auto;
+  height: auto;
+  background: none;
+  color: var(--ink-2);
+}
+
+/* ── Blockquote outside the quote layout ── */
+
+.slide blockquote {
+  border-left: 0.11em solid var(--ink);
+  padding-left: 1.05em;
+  color: var(--ink-2);
+}
+
+.slide blockquote > * + * {
+  margin-top: 0.5em;
+}
+
+/* ── Tables ── */
+
 .slide table {
   border-collapse: collapse;
   font-variant-numeric: tabular-nums;
@@ -275,136 +359,97 @@
 
 .slide th,
 .slide td {
-  padding: 14px 20px 14px 0;
-  border-bottom: 1px solid var(--line);
+  padding: 14px 20px;
   text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line);
 }
 
+.slide th {
+  border-bottom-color: var(--ink);
+  vertical-align: bottom;
+}
+
+/* The first column lines up with the title and the text around the table. */
+.slide th:first-child,
+.slide td:first-child {
+  padding-left: 0;
+}
+
+.slide th:last-child,
+.slide td:last-child {
+  padding-right: 0;
+}
+
+/* Small role */
 .slide td {
-  font-size: calc(21px * var(--fs));
+  font-size: calc(21px * var(--ts) * var(--density));
+  line-height: 1.4;
+  color: var(--ink-2);
 }
 
-.slide pre {
-  font-family: var(--font-mono);
-  font-size: calc(20px * var(--fs));
-  line-height: 1.5;
-  overflow: hidden;
-}
-
-.slide code {
-  font-family: var(--font-mono);
-}
-
-/* Media: kept inside its box. */
-.slide .s-media {
-  position: relative;
-  min-height: 0;
-  min-width: 0;
-}
+/* ── Media ── */
 
 .slide figure {
   margin: 0;
+  min-width: 0;
+  min-height: 0;
 }
 
-.slide .s-media img,
-.slide .s-media video {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+.slide img,
+.slide video {
+  display: block;
+  max-width: 100%;
 }
 
-.slide[data-layout='image'] {
-  padding: 0;
+.slide figcaption {
+  margin-top: 12px;
 }
 
-.slide[data-layout='image'] .s-media,
-.slide[data-layout='image'] figure {
-  height: 100%;
+.slide iframe {
+  display: block;
+  border: 0;
 }
 
-.slide[data-layout='image'] img {
-  object-fit: cover;
-}
+/* ── Background image under a dark scrim (§8; scrim 0.55 per Phase 4 task 6).
+   The scrim is a flat layer over the picture, not a pseudo-element, so
+   ::before and ::after stay free. ── */
 
-.slide[data-layout='figure'] .s-media,
-.slide[data-layout='gallery'] .s-media {
-  flex: 1 1 auto;
-  margin-top: 24px;
-}
-
-.slide[data-layout='figure'] .s-main,
-.slide[data-layout='gallery'] .s-main {
-  flex: none;
-}
-
-.slide[data-layout='figure'] figure {
-  height: 100%;
-}
-
-.slide[data-layout='gallery'] .s-media {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-}
-
-.slide[data-layout='split'] {
-  flex-direction: row;
-  gap: 72px;
-}
-
-.slide[data-layout='split'] .s-main {
-  flex: 1 1 0;
-  width: auto;
-  justify-content: center;
-}
-
-.slide[data-layout='split'] .s-media {
-  flex: 1 1 0;
-}
-
-.slide[data-layout='split'][data-image='left'] .s-media {
-  order: -1;
-}
-
-.slide[data-layout='split'] figure {
-  height: 100%;
-}
-
-/* Background image under a dark scrim (§8). */
 .slide[data-bg='image'] {
-  background-image: var(--slide-bg);
+  background-image:
+    linear-gradient(rgb(0 0 0 / 0.55), rgb(0 0 0 / 0.55)),
+    var(--slide-bg);
   background-size: cover;
   background-position: center;
 }
 
-.slide[data-bg='image']::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgb(0 0 0 / 0.45);
-}
+/* ── Footnotes: a sibling of .s-main, pinned to the bottom of the safe area
+   in the slide's flex column, so .s-main shrinks to make room for them. ── */
 
-.slide[data-bg='image'] > * {
-  position: relative;
-}
-
-/* Footnotes: a sibling of .s-main, so they land at the bottom of the column. */
-.slide section.footnotes {
+.slide > section.footnotes {
   flex: none;
-  margin-top: 24px;
+  width: var(--col);
+  margin: 24px auto 0;
   padding-top: 12px;
   border-top: 1px solid var(--line);
   color: var(--ink-2);
-}
-
-.slide section.footnotes ol {
-  padding-left: 1.2em;
-}
-
-.slide section.footnotes li,
-.slide section.footnotes p {
-  font-size: calc(16px * var(--fs));
+  font-family: var(--font-sans);
+  font-size: max(11px, calc(13px * var(--ts) * var(--density)));
   line-height: 1.4;
+}
+
+.slide > section.footnotes li {
+  padding-left: 2.2em;
+}
+
+.slide > section.footnotes li + li {
+  margin-top: 0.3em;
+}
+
+.slide > section.footnotes ol > li::before {
+  font-size: 0.85em;
+  width: calc(2.2em / 0.85);
+  margin-left: calc(-2.2em / 0.85);
 }
 
 .slide .data-footnote-backref {
@@ -421,4 +466,19 @@
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
+}
+
+/* ── Dev only: a slide that overflows at the smallest density. ── */
+
+.app[data-dev] .slide[data-overflow]::after {
+  content: 'OVERFLOW';
+  position: absolute;
+  right: var(--m-x);
+  bottom: 64px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: var(--red);
 }

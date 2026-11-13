@@ -24,7 +24,7 @@ tick the phase in §0, record any deviation from the plan in §11, and commit.
 | 1 | Compiler: markdown → deck JSON | L | 0 | Sonnet | [x] |
 | 2 | Vite plugin, dev server, scripts | M | 1 | Sonnet | [x] |
 | 3 | Runtime shell: stage, nav, builds, chrome, live reload | L | 2 | Sonnet | [x] |
-| 4 | Slide design: typography, all layouts, demo deck | L | 3 | Sonnet | [ ] |
+| 4 | Slide design: typography, all layouts, demo deck | L | 3 | Sonnet | [x] |
 | 5 | Settings sheet, overview, source view | M | 3 | Sonnet | [ ] |
 | 6 | Marks: draw, sticky notes, laser, persistence | L | 3 | Sonnet | [ ] |
 | 7 | Zoom and pan | S | 3 | Sonnet | [ ] |
@@ -506,6 +506,7 @@ Computed attributes:
 
 - `split`: `data-image` is `options.image`, else `left` if the media block is the first block, else `right`.
 - `statement`: `data-len` from the first paragraph's character count: ≤ 8 `xs`, ≤ 40 `s`, ≤ 100 `m`, else `l`.
+- `quote`: `data-len` is `l` when the quote has more than 140 characters (the attribution not counted), else `m`; §8 sets long quotes smaller.
 - `gallery` and `columns`: `data-count` is the number of images or columns.
 - `image`, `split`, `figure`: `data-imgfit` is `options.fit` or the layout's default.
 - `options.align` → `data-align`. `options.bg` that ends in an image extension → `data-bg="image"` and the rewritten URL in `attrs['style']` as `--slide-bg: url(...)`; any other `bg` value → `attrs['style']` as `background: <value>`.
@@ -809,8 +810,8 @@ Slide type, in logical pixels on the 1600×900 stage, at the Regular text size. 
 
 | Role | Element | Size / line height | Weight | Tracking | Color |
 |---|---|---|---|---|---|
-| Display | `h1` | 80 / 1.02 | 500 | -0.03em | ink |
-| Slide title | `h2` | 60 / 1.08 | 400 | -0.02em | ink |
+| Display | `h1` | 80 / 1.02 | 500 | -0.015em | ink |
+| Slide title | `h2` | 60 / 1.08 | 400 | -0.01em | ink |
 | Subhead | `h3` | 30 / 1.15 | 500 | -0.01em | ink |
 | Small subhead | `h4` | 22 / 1.2 | 500 | 0 | ink |
 | Eyebrow | `h6` | 13 / 1.2, mono, uppercase | 500 | 0.14em | ink-2 |
@@ -819,8 +820,8 @@ Slide type, in logical pixels on the 1600×900 stage, at the Regular text size. 
 | Small | nested lists, column text, table cells | 21 / 1.4 | 400 | 0 | ink-2 |
 | Caption, attribution, labels | `figcaption`, `.attrib`, `th` | 13 / 1.3, mono, uppercase | 400 | 0.12em | ink-2 |
 | Code | `pre`, `code` | 20 / 1.5, mono | 400 | 0 | ink |
-| Quote | `blockquote` in `quote` | 44 / 1.2 (32 / 1.3 above 140 characters) | 400 | -0.015em | ink |
-| Statement | `p` in `statement` | `xs` 240 / 0.9 · `s` 104 / 1.0 · `m` 72 / 1.08 · `l` 48 / 1.15 | 500 | -0.03em | ink |
+| Quote | `blockquote` in `quote` | 44 / 1.2 (32 / 1.3 above 140 characters, `data-len="l"`) | 400 | -0.01em | ink |
+| Statement | `p` in `statement` | `xs` 240 / 0.9 · `s` 104 / 1.0 · `m` 72 / 1.08 · `l` 48 / 1.15 | 500 | -0.02em | ink |
 
 Chrome type, in real CSS pixels:
 
@@ -838,7 +839,7 @@ Safe margins on the stage: 128 left and right (8% of the width for other aspects
 | Layout | Composition |
 |---|---|
 | `default` | `.s-main` is a column `min(100%, calc(1700px * var(--ts)))` wide, centered horizontally in the safe area and filling its height. At Quiet this puts the left edge at about 13% of the width, as in the reference; at Regular and Loud it is the full safe area. Head on top; the body starts 0.6em (of the slide title's size) below it, max width 36em. `data-align="center"` centers the body vertically. `columns`, `figure`, and `gallery` use the same column. |
-| `title`, `section` | A column `min(100%, calc(1080px * var(--ts)))` wide, centered horizontally, with its content centered vertically on the stage. Text stays left-aligned. At Quiet this puts the left edge at about 26% of the width, as in the reference. The paragraphs under the `h1` use the Lede role and sit in one block with a `--ink` rule on the left, 0.11em wide, and 1.05em of padding between rule and text. The block starts 1.4em below the heading (target: the top of the rule is about 0.7× the heading's font size below the heading's baseline). `section` shows `attr(data-section)` above the heading as an eyebrow. |
+| `title`, `section` | A column `min(100%, calc(1080px * var(--ts)))` wide, centered horizontally, with its content centered vertically on the stage. Text stays left-aligned. At Quiet this puts the left edge at about 26% of the width, as in the reference. The paragraphs under the `h1` use the Lede role and sit in one block with a `--ink` rule on the left, 0.11em wide, and 1.05em of padding between rule and text. The block starts 1.57em below the heading (target: the top of the rule is about 0.7× the heading's font size below the heading's baseline). An eyebrow hangs above the heading and takes no space, so the heading and lede are what is centered. `section` shows `attr(data-section)` above the heading as an eyebrow, hanging the same way. |
 | `statement` | Same centered column, `calc(1240px * var(--ts))` wide. A second paragraph becomes a caption (Caption role at 1.25× its size) 1.2em below. |
 | `quote` | Same centered column, `calc(1160px * var(--ts))` wide. The blockquote has the same left rule (0.07em wide) and 0.8em of padding. Attribution 40 below, in caption style. No quotation-mark glyphs. |
 | `columns` | Head on top. `.s-cols` is a grid of `data-count` equal columns (5 or 6 columns wrap to 3 per row), gap 56. Each column has a 1px `--ink` rule on top and 24 of padding above its content. Column text uses the Small role. |
@@ -858,7 +859,7 @@ Content elements (all layouts):
 - **Inline code**: mono at 0.88em on a `--tint` background with 0.1em×0.3em padding.
 - **Links**: `--ink`, 1px underline, 0.18em offset. **Strong**: weight 700. **`mark`**: `--marker` background at 60%.
 - **Footnotes** (`section.footnotes`): pinned to the bottom of the safe area, caption-sized sans text in `--ink-2`, with a 1px `--line` rule above. Hide the back-reference arrows and the "Footnotes" heading.
-- **Background image** (`data-bg="image"`): the image covers the stage under a `rgb(0 0 0 / 0.45)` scrim.
+- **Background image** (`data-bg="image"`): the image covers the stage under a `rgb(0 0 0 / 0.55)` scrim.
 - **Overflow flag** (`data-overflow`, dev only): a small `OVERFLOW` label in `--red`, mono, at the bottom-right of the slide.
 
 ### Chrome
@@ -1255,3 +1256,13 @@ Executors: add a line here whenever the implementation differs from this plan. F
 - Phase 3 — `index.html` has `<link rel="icon" href="data:,">`, so no `favicon.ico` request 404s in the console.
 - Phase 3 — Playwright runs with one worker, in file order, and `reducedMotion: 'reduce'`. Tests that need to edit a deck write `decks/zz-e2e-*` (gitignored) via `e2e/temp-deck.ts`, and those folders are removed in `afterAll` and again in `globalTeardown`. In dev, `window.__dex` exposes `{ deck, nav, settings, ui }` for tests and the console.
 - Phase 3 — known rough edges for Phase 4: on the `bg` image slide, the chrome Labels (`--ink-3`) are barely visible over the scrimmed light demo image. Shiki puts `background-color: var(--shiki-background)` inline on each `pre`, which beats a stylesheet `background`; `code.css` needs to set `--shiki-background` (for example to `var(--tint)`) instead. The `OVERFLOW` flag (§8) is not drawn yet, though `data-overflow` is set.
+- Phase 4 — §8 values changed (the §8 tables above now carry the new values). (1) Display tracking eased: `h1` -0.03em → -0.015em, `h2` -0.02em → -0.01em, statement -0.03em → -0.02em, quote -0.015em → -0.01em. DM Sans switches to its display optical size at these sizes, which is already tightly spaced; at the original values letter pairs touched ("ee" in "Three", "go" in "good"), seen side by side in an A/B render. Owner may want to flip this back. (2) The lede block's top margin is 1.57em (of the lede), not 1.4em: 1.4em gave a rule top 0.64× the heading size below its baseline, short of the 0.7× target; 1.57em measures 0.69×. (3) The scrim is 0.55, as Phase 4 task 6 decided (§8 still said 0.45).
+- Phase 4 — the title layout's eyebrow and the section number hang above the heading (negative top margin equal to their height plus gap), so the heading-plus-lede block is what is centered on the stage, and a title slide's heading sits in the same place with or without an eyebrow. Measured at Quiet: block centre 450.0 on a 450 stage centre.
+- Phase 4 — compiler: `quote` slides get `data-len` (`l` over 140 characters, attribution excluded, else `m`), because §8 sets long quotes at 32 / 1.3 and no attribute exposed the length. `layout.ts` `computeAttrs`, one new test, and the demo snapshot (the quote slide gains `data-len="m"`; hashes unchanged). §6 "Computed attributes" updated.
+- Phase 4 — the `bg` scrim is a flat `linear-gradient` layer above `var(--slide-bg)` in `background-image`, not a `::before`, so `::before` stays free for the section number and `::after` for the dev `OVERFLOW` label. The Phase 3 smoke test that compared the whole `background-image` now checks that the last layer is the page-relative `url()`.
+- Phase 4 — layouts that center their content (`title`, `section`, `statement`, `quote`) use a bottom padding equal to the top (112), so content is centered on the stage rather than on the safe area, which is 4px lower. `justify-content: safe center` everywhere, so overflowing content falls back to the top instead of being clipped above.
+- Phase 4 — `section`: the slide's flex column centers `::before` (the number) and `.s-main` together, and `.s-main` shrink-wraps. Chrome counts the h1's glyph box (about 1.3em) beyond its 1.02 line box as scrollable overflow, which made the section slide report `data-overflow`; `.s-main` has 0.16 × the h1 size of block padding to hold it.
+- Phase 4 — choices §8 left open: table cells in the first and last column have no outer horizontal padding, so table text lines up with the title; code blocks are `fit-content` wide with a 30em minimum and may exceed the 36em text measure (up to the column), and their 28×32 padding is written as 1.4em × 1.6em so it follows the text size; a highlighted line's band runs the full width of the block; in numbered lists an item's first paragraph is inline, so loose lists and footnotes keep their text on the number's line; footnote text is 13 (Caption size, with the same 11 floor as mono roles) with the zero-padded number in mono; `h5` borrows the `h4` role; the `image` layout's caption sits at the bottom-left corner of the safe area; in `split` with `cover`, a caption sits on a `--bg` strip at the bottom inner corner of the picture; `columns` gap (56) and rule padding (24) are fixed logical pixels and do not scale with text size; the space between head and body is 0.6 × the slide-title size for `default`, `columns`, `figure`, and `gallery` alike.
+- Phase 4 — chrome over a `bg` image: `.app` gets `data-over-image` (set in `App.svelte`) and `chrome.css` steps the labels up one level as decided. On the demo's light plate under the 0.55 scrim, the counter and deck title read, but the idle `← → NOTE DRAW` (now `--ink-3`) are still close to invisible. Left as decided; a second step, or a `--bg` strip under the bars only on image slides, would fix it.
+- Phase 4 — `App.svelte` sets `data-dev` on `.app` in dev, for the `OVERFLOW` label (13px fixed, a dev marker, not slide text).
+- Phase 4 — Playwright has two projects: `chromium` (smoke, ignores `shots.spec.ts`) and `shots` (only `shots.spec.ts`); `pnpm test:e2e` runs `--project=chromium`, `pnpm shots` runs `--project=shots`. `pnpm shots` also writes `docs/shots/report.json` (layout, density, overflow per shot) and `docs/shots/measure.json` (the §8 reference measurements at Quiet, taken from the DOM), five sample slides at Quiet and Loud, and the title, bullets, columns and both split slides on 4:3 and 16:10 stages at Regular and Quiet (temporary `decks/zz-e2e-aspect-*` decks, removed afterwards). `docs/shots/` is gitignored.

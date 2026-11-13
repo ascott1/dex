@@ -1,2 +1,384 @@
-/* Per-layout composition, one block per data-layout (§8 "Slide geometry").
-   Phase 4 writes this file; Phase 3 keeps only the bare minimum in slide.css. */
+/* Layout geometry (§8 "Slide geometry"): one block per data-layout. Every
+   position derives from the stage size (--w, --h) and the safe margins set on
+   .slide in slide.css, so 16:10 and 4:3 need no rules of their own. */
+
+/* ── default, columns, figure, gallery: one column, centred in the safe area.
+   1190 wide at Quiet; the full safe area at Regular and Loud. ── */
+
+.slide:is([data-layout='default'], [data-layout='columns'], [data-layout='figure'], [data-layout='gallery']) > .s-main,
+.slide:is([data-layout='figure'], [data-layout='gallery']) > .s-media {
+  width: var(--col);
+  margin-inline: auto;
+}
+
+.slide:is([data-layout='default'], [data-layout='columns']) > .s-main {
+  flex: 1 1 auto;
+}
+
+/* align: center puts the body in the middle of the space under the head. */
+.slide[data-layout='default'][data-align='center'] .s-body {
+  margin-block: auto;
+}
+
+/* ── title, section, statement, quote: a narrow column centred on the stage,
+   text left-aligned in it. The bottom padding matches the top so the block
+   is centred on the stage, not on the (slightly taller) safe area. ── */
+
+.slide:is([data-layout='title'], [data-layout='section'], [data-layout='statement'], [data-layout='quote']) {
+  padding-bottom: var(--m-top);
+}
+
+.slide:is([data-layout='title'], [data-layout='section'], [data-layout='statement'], [data-layout='quote']) > .s-main {
+  flex: 1 1 auto;
+  margin-inline: auto;
+  justify-content: safe center;
+}
+
+.slide:is([data-layout='title'], [data-layout='section'], [data-layout='statement'], [data-layout='quote']) .s-body {
+  max-width: none;
+}
+
+/* ── title, section ── */
+
+.slide:is([data-layout='title'], [data-layout='section']) {
+  --col-title: min(var(--safe-w), calc(1080px * var(--ts)));
+}
+
+.slide:is([data-layout='title'], [data-layout='section']) > .s-main {
+  width: var(--col-title);
+}
+
+/* Lede: one block with an ink rule on its left. The top of the rule sits
+   0.7× the heading's size below the heading's baseline (§8 reference); the
+   h1's line box ends about 0.17× its size below the baseline, and 80 × 0.53
+   is 1.57 lede ems (27). */
+.slide:is([data-layout='title'], [data-layout='section']) .s-head + .s-body,
+.slide:is([data-layout='title'], [data-layout='section']) .s-body {
+  font-size: calc(27px * var(--ts) * var(--density));
+  line-height: 1.5;
+  margin-top: 1.57em;
+  border-left: 0.11em solid var(--ink);
+  padding-left: 1.05em;
+}
+
+/* The eyebrow hangs above the heading and takes no space, so the heading and
+   lede are centred on the stage whether or not a slide has an eyebrow. */
+.slide[data-layout='title'] .s-head h6 {
+  margin-top: calc(-1lh - 1.8em);
+}
+
+.slide:is([data-layout='title'], [data-layout='section']) .s-body:first-child {
+  margin-top: 0;
+}
+
+.slide:is([data-layout='title'], [data-layout='section']) .s-body > * + * {
+  margin-top: 0.6em;
+}
+
+/* Section: the number from data-section, drawn as an eyebrow above the
+   heading. It is the slide's ::before, so the slide's flex column centres it
+   together with .s-main; .s-main can still shrink (and so overflow) when the
+   heading is too tall. */
+.slide[data-layout='section'] {
+  justify-content: safe center;
+}
+
+.slide[data-layout='section'] {
+  /* The h1's glyph box (about 1.3em) is taller than its 1.02 line box, and
+     Chrome counts the difference as scrollable overflow; once .s-main
+     shrink-wraps the heading that reads as an overflow. This padding holds it. */
+  --sec-pad: calc(80px * 0.16 * var(--ts) * var(--density));
+}
+
+.slide[data-layout='section'] > .s-main {
+  flex: 0 1 auto;
+  padding-block: var(--sec-pad);
+}
+
+.slide[data-layout='section'][data-section]::before {
+  content: attr(data-section);
+  flex: none;
+  width: var(--col-title);
+  /* Hangs like the title's eyebrow: the net height it adds is zero. */
+  margin: calc(-1lh - 1.8em + var(--sec-pad)) auto calc(1.8em - var(--sec-pad));
+  font-family: var(--font-mono);
+  font-size: max(11px, calc(13px * var(--ts) * var(--density)));
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  color: var(--ink-2);
+}
+
+/* ── statement: very large type, sized by data-len. ── */
+
+.slide[data-layout='statement'] > .s-main {
+  width: min(var(--safe-w), calc(1240px * var(--ts)));
+}
+
+.slide[data-layout='statement'] .s-body > p:first-child {
+  font-weight: 500;
+  /* §8 says -0.03em; at the display optical size letters touched (§11). */
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.slide[data-layout='statement'][data-len='xs'] .s-body > p:first-child {
+  font-size: calc(240px * var(--ts) * var(--density));
+  line-height: 0.9;
+  font-variant-numeric: lining-nums;
+}
+
+.slide[data-layout='statement'][data-len='s'] .s-body > p:first-child {
+  font-size: calc(104px * var(--ts) * var(--density));
+  line-height: 1;
+}
+
+.slide[data-layout='statement'][data-len='m'] .s-body > p:first-child {
+  font-size: calc(72px * var(--ts) * var(--density));
+  line-height: 1.08;
+}
+
+.slide[data-layout='statement'][data-len='l'] .s-body > p:first-child {
+  font-size: calc(48px * var(--ts) * var(--density));
+  line-height: 1.15;
+}
+
+/* The second paragraph is a caption at 1.25× the Caption role, 1.2em below. */
+.slide[data-layout='statement'] .s-body > p + p {
+  margin-top: 1.2em;
+  font-family: var(--font-mono);
+  font-size: max(11px, calc(13px * 1.25 * var(--ts) * var(--density)));
+  line-height: 1.3;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+/* ── quote ── */
+
+.slide[data-layout='quote'] > .s-main {
+  width: min(var(--safe-w), calc(1160px * var(--ts)));
+}
+
+.slide[data-layout='quote'] blockquote {
+  font-size: calc(44px * var(--ts) * var(--density));
+  line-height: 1.2;
+  /* §8 says -0.015em; eased with the other display sizes (§11). */
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  border-left: 0.07em solid var(--ink);
+  padding-left: 0.8em;
+}
+
+/* Over 140 characters (data-len="l" from the compiler): 32 / 1.3. */
+.slide[data-layout='quote'][data-len='l'] blockquote {
+  font-size: calc(32px * var(--ts) * var(--density));
+  line-height: 1.3;
+}
+
+.slide[data-layout='quote'] blockquote > p:not(.attrib) {
+  text-wrap: balance;
+}
+
+.slide[data-layout='quote'] blockquote > p:not(.attrib) + p:not(.attrib) {
+  margin-top: 0.4em;
+}
+
+.slide[data-layout='quote'] blockquote > .attrib {
+  margin-top: calc(40px * var(--ts) * var(--density));
+  letter-spacing: 0.12em;
+}
+
+/* ── columns: a grid of data-count equal columns, each under an ink rule. ── */
+
+.slide[data-layout='columns'] .s-lede {
+  max-width: 36em;
+}
+
+.slide[data-layout='columns'] .s-lede + .s-cols {
+  margin-top: calc(48px * var(--ts) * var(--density));
+}
+
+.slide[data-layout='columns'] .s-cols {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr));
+  gap: 56px;
+  align-items: start;
+}
+
+.slide[data-layout='columns'][data-count='1'] .s-cols { --cols: 1; }
+.slide[data-layout='columns'][data-count='2'] .s-cols { --cols: 2; }
+.slide[data-layout='columns'][data-count='3'] .s-cols { --cols: 3; }
+.slide[data-layout='columns'][data-count='4'] .s-cols { --cols: 4; }
+.slide[data-layout='columns']:is([data-count='5'], [data-count='6']) .s-cols { --cols: 3; }
+
+.slide[data-layout='columns'] .s-col {
+  border-top: 1px solid var(--ink);
+  padding-top: 24px;
+  /* Small role */
+  font-size: calc(21px * var(--ts) * var(--density));
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+
+.slide[data-layout='columns'] .s-col > :is(h3, h4, h5) {
+  color: var(--ink);
+}
+
+/* ── split: two halves. The text half keeps the outer safe margin and a 72
+   inner margin, centred vertically; the media half is full-bleed. ── */
+
+.slide[data-layout='split'] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+  padding: var(--m-top) 0 var(--m-bottom);
+}
+
+.slide[data-layout='split'] > .s-main {
+  grid-column: 1;
+  grid-row: 1;
+  padding: 0 72px 0 var(--m-x);
+  justify-content: safe center;
+}
+
+.slide[data-layout='split'] > .s-media {
+  grid-column: 2;
+  grid-row: 1;
+  /* Out to the stage edges, through the top and bottom margins. */
+  margin: calc(-1 * var(--m-top)) 0 calc(-1 * var(--m-bottom));
+}
+
+.slide[data-layout='split'][data-image='left'] > .s-main {
+  grid-column: 2;
+  padding: 0 var(--m-x) 0 72px;
+}
+
+.slide[data-layout='split'][data-image='left'] > .s-media {
+  grid-column: 1;
+}
+
+.slide[data-layout='split'] .s-body {
+  max-width: none;
+}
+
+.slide[data-layout='split'][data-imgfit='contain'] > .s-media {
+  padding: 72px;
+}
+
+/* ── media boxes shared by split, figure, image, gallery ── */
+
+.slide:is([data-layout='split'], [data-layout='figure'], [data-layout='image'], [data-layout='gallery']) .s-media {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+
+.slide:is([data-layout='split'], [data-layout='figure'], [data-layout='image'], [data-layout='gallery']) .s-media > figure {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.slide:is([data-layout='split'], [data-layout='figure'], [data-layout='image'], [data-layout='gallery']) .s-media > figure > :is(img, video) {
+  flex: 1 1 0;
+  width: 100%;
+  min-height: 0;
+  object-fit: cover;
+}
+
+.slide[data-imgfit='contain'] .s-media > figure > :is(img, video) {
+  object-fit: contain;
+}
+
+/* A caption on a full-bleed picture sits bottom-left on a --bg strip. */
+.slide:is([data-layout='image'], [data-layout='split']:not([data-imgfit='contain'])) .s-media figcaption {
+  position: absolute;
+  left: var(--m-x);
+  bottom: var(--m-bottom);
+  margin: 0;
+  padding: 8px 12px;
+  background-color: var(--bg);
+  color: var(--ink);
+}
+
+.slide[data-layout='split'][data-image='right']:not([data-imgfit='contain']) .s-media figcaption {
+  left: 72px;
+}
+
+.slide[data-layout='split'][data-image='left']:not([data-imgfit='contain']) .s-media figcaption {
+  left: auto;
+  right: 72px;
+}
+
+/* ── figure: head on top; the image fills the rest of the safe area,
+   contained and left-aligned; caption below. ── */
+
+.slide[data-layout='figure'] > .s-main,
+.slide[data-layout='gallery'] > .s-main {
+  flex: none;
+}
+
+.slide[data-layout='figure'] > .s-media,
+.slide[data-layout='gallery'] > .s-media {
+  flex: 1 1 0;
+}
+
+.slide[data-layout='figure'] > .s-main + .s-media,
+.slide[data-layout='gallery'] > .s-main + .s-media {
+  margin-top: var(--head-gap);
+}
+
+.slide[data-layout='figure'] .s-media > figure > :is(img, video) {
+  object-fit: contain;
+  object-position: left top;
+}
+
+/* ── image: the picture covers the whole stage. ── */
+
+.slide[data-layout='image'] {
+  padding: 0;
+}
+
+.slide[data-layout='image'] > .s-media {
+  position: absolute;
+  inset: 0;
+}
+
+.slide[data-layout='image'] > .s-main {
+  position: relative;
+  z-index: 1;
+  width: var(--col);
+  margin: var(--m-top) auto 0;
+}
+
+/* ── gallery: a grid with 16 gaps; images cover their cells. ── */
+
+.slide[data-layout='gallery'] > .s-media {
+  display: grid;
+  grid-template-columns: repeat(var(--g-cols, 3), minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.slide[data-layout='gallery'][data-count='2'] > .s-media { --g-cols: 2; }
+.slide[data-layout='gallery'][data-count='3'] > .s-media { --g-cols: 3; }
+.slide[data-layout='gallery'][data-count='4'] > .s-media { --g-cols: 2; }
+
+/* ── full: no padding; direct children fill the stage. ── */
+
+.slide[data-layout='full'] {
+  padding: 0;
+  display: block;
+}
+
+.slide[data-layout='full'] > * {
+  width: 100%;
+  height: 100%;
+}
+
+.slide[data-layout='full'] > iframe {
+  border: 0;
+}

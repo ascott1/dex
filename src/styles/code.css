@@ -1,2 +1,72 @@
-/* Code blocks, line highlighting, inline code (§8 "Content elements").
-   Phase 4 writes this file. */
+/* Code (§8 "Code blocks", "Inline code"): Shiki's css-variables theme, whose
+   token colours come from tokens.css. Shiki writes
+   `background-color: var(--shiki-background)` inline on every pre, which beats
+   a stylesheet background, so the tint is set through the variable. */
+
+.slide pre {
+  font-family: var(--font-mono);
+  font-size: calc(20px * var(--ts) * var(--density));
+  line-height: 1.5;
+  font-weight: 400;
+  letter-spacing: 0;
+  font-variant-ligatures: none;
+  tab-size: 2;
+  white-space: pre;
+  overflow: hidden;
+  /* 28×32 at 20px, and it follows the text size. */
+  padding: 1.4em 1.6em;
+  border: 1px solid var(--line);
+  background-color: var(--tint);
+  color: var(--ink);
+  width: fit-content;
+  min-width: min(100%, 30em);
+  max-width: 100%;
+}
+
+.slide pre.shiki {
+  --shiki-background: var(--tint);
+}
+
+.slide pre:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* A code block may be wider than the 36em text measure, up to the column. */
+.slide .s-body:has(> pre) {
+  max-width: none;
+}
+
+.slide pre code {
+  font: inherit;
+  background: none;
+  padding: 0;
+}
+
+/* Each line is a band as wide as the block, padding included, so a
+   highlighted line reads as one strip. */
+.slide pre .line {
+  display: inline-block;
+  width: calc(100% + 3.2em);
+  margin-inline: -1.6em;
+  padding-inline: 1.6em;
+  transition: opacity var(--t-med) var(--ease);
+}
+
+.slide pre:has(.line.highlighted) .line:not(.highlighted) {
+  opacity: 0.45;
+}
+
+.slide pre .line.highlighted {
+  background-color: var(--tint);
+}
+
+/* Inline code */
+.slide :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  font-weight: 400;
+  padding: 0.1em 0.3em;
+  background-color: var(--tint);
+  font-variant-ligatures: none;
+}

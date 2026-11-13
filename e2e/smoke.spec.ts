@@ -148,7 +148,8 @@ test.describe('demo deck', () => {
   test('a bg image resolves against the page, not the stylesheet', async ({ page }) => {
     await open(page, `#/demo/${BG}`);
     const bg = await current(page).evaluate((el) => getComputedStyle(el).backgroundImage);
-    expect(bg).toBe(`url("${new URL('decks/demo/media/plate-4.svg', page.url()).href}")`);
+    // The scrim is a flat layer drawn over the picture, so the url() is the last layer.
+    expect(bg.endsWith(`, url("${new URL('decks/demo/media/plate-4.svg', page.url()).href}")`)).toBe(true);
   });
 
   test('the theme override is remembered per deck', async ({ page }) => {
