@@ -7,7 +7,30 @@ export const LANGS = [
   'python', 'rust', 'swift', 'sql', 'yaml', 'markdown', 'diff',
 ] as const;
 
-const theme = createCssVariablesTheme({ name: 'dex', variablePrefix: '--shiki-', fontStyle: true });
+const base = createCssVariablesTheme({ name: 'dex', variablePrefix: '--shiki-', fontStyle: true });
+
+// The css-variables theme gives variables, object names, and built-in types
+// (`variable.other.*`, `support.*`) the same colour as literals, so a typical
+// TypeScript block was mostly orange. Here names are plain ink and the
+// constant colour is left to numbers, `true`/`null`/`this`, and the like.
+// Appended last, so these win over the base rules for the same scopes.
+const theme = {
+  ...base,
+  tokenColors: [
+    ...(base.tokenColors ?? []),
+    {
+      scope: [
+        'variable.other.object',
+        'variable.other.class',
+        'variable.other.constant',
+        'support.type',
+        'support.class',
+        'support.variable',
+      ],
+      settings: { foreground: 'var(--shiki-foreground)' },
+    },
+  ],
+};
 
 let highlighter: Promise<Highlighter> | null = null;
 

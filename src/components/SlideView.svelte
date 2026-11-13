@@ -88,6 +88,36 @@
     };
   });
 
+  // A missing image becomes a 1px --line frame with its path in it (slide.css
+  // `.broken-media`), not the browser's broken-image icon. Image errors do not
+  // bubble, so listen in the capture phase; an image that failed before this
+  // ran is caught by `decode()`, which rejects for it.
+  function markBroken(img: HTMLImageElement) {
+    if (!img.isConnected) return;
+    const box = document.createElement('span');
+    box.className = 'broken-media';
+    box.setAttribute('role', 'img');
+    box.setAttribute('aria-label', img.alt ? `Missing image: ${img.alt}` : 'Missing image');
+    // The path as written in deck.md: the compiler's `decks/<slug>/` prefix comes off.
+    box.textContent = (img.getAttribute('src') ?? '').replace(/^decks\/[a-z0-9][a-z0-9-]*\//, '');
+    img.replaceWith(box);
+    fit();
+  }
+
+  $effect(() => {
+    void slide.html;
+    const onError = (event: Event) => {
+      if (event.target instanceof HTMLImageElement) markBroken(event.target);
+    };
+    el.addEventListener('error', onError, true);
+    for (const img of el.querySelectorAll('img')) {
+      if (img.complete && img.naturalWidth === 0 && img.getAttribute('src')) {
+        img.decode().catch(() => markBroken(img));
+      }
+    }
+    return () => el.removeEventListener('error', onError, true);
+  });
+
   // Video: autoplay on show, pause on leave.
   $effect(() => {
     void slide.html;
@@ -126,7 +156,9 @@
   data-id={slide.id}
   {...attrs}
   style={absoluteUrls(slide.attrs.style)}
+  role="group"
   aria-roledescription="slide"
+  aria-label={slide.title ?? `Slide ${slide.index + 1}`}
   aria-hidden={current ? undefined : 'true'}
   {onclick}
 >

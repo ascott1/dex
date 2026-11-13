@@ -101,6 +101,46 @@ test.describe.serial('live reload', () => {
     await expectSamePage(page);
   });
 
+  test('a deck with only frontmatter says it has no slides', async ({ page }) => {
+    writeDeck(slug, '---\ntitle: Only frontmatter\n---\n');
+    await page.goto(`/#/${slug}`);
+    await expect(page.getByText('No slides yet')).toBeVisible();
+    await expect(page.locator('.topbar .label')).toHaveText('Only frontmatter');
+    await expect(counter(page)).toHaveText('00 / 00');
+  });
+
+  test('a missing image, a very long word, and an unknown code language stay inside the slide', async ({ page }) => {
+    const word = 'Pneumonoultramicroscopicsilicovolcanoconiosis'.repeat(3);
+    writeDeck(slug, [
+      `## Missing\n\nSome text beside a picture that is not there.\n\n![A desk](media/nowhere.png)`,
+      `## ${word}\n\n${word} ${word}`,
+      '## Code\n\n```klingon\nqapla();\n```',
+    ].join('\n\n---\n\n'));
+
+    await open(page, `#/${slug}/1`);
+    const broken = current(page).locator('.broken-media');
+    await expect(broken).toHaveText('media/nowhere.png');
+    await expect(broken).toHaveAttribute('aria-label', 'Missing image: A desk');
+    await expect(broken).toHaveCSS('border-top-style', 'solid');
+    await expect(current(page).locator('img')).toHaveCount(0);
+
+    await page.keyboard.press('ArrowRight');
+    await expectSlide(page, 2, slug, 3);
+    const inside = await current(page).evaluate((slide) => {
+      const s = slide.getBoundingClientRect();
+      return [...slide.querySelectorAll('h2, p')].every((el) => {
+        const r = el.getBoundingClientRect();
+        return r.left >= s.left - 0.5 && r.right <= s.right + 0.5 && el.scrollWidth <= el.clientWidth + 1;
+      });
+    });
+    expect(inside).toBe(true);
+
+    await page.keyboard.press('ArrowRight');
+    await expectSlide(page, 3, slug, 3);
+    await expect(current(page).locator('pre.shiki')).toHaveText('qapla();');
+    await expect(page.getByRole('button', { name: /1 warning/i })).toBeVisible();
+  });
+
   test('with two decks, / lists them', async ({ page }) => {
     writeDeck(slug, deckWith('Listed'));
     await page.goto('/');

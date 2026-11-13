@@ -294,7 +294,7 @@
   height: 100%;
 }
 
-.slide:is([data-layout='split'], [data-layout='figure'], [data-layout='image'], [data-layout='gallery']) .s-media > figure > :is(img, video) {
+.slide:is([data-layout='split'], [data-layout='figure'], [data-layout='image'], [data-layout='gallery']) .s-media > figure > :is(img, video, .broken-media) {
   flex: 1 1 0;
   width: 100%;
   min-height: 0;

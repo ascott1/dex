@@ -26,7 +26,7 @@ const SUBDIR_URL = `http://localhost:${SUBDIR_PORT}/${SUBDIR}/`;
 // A stroke the bundled marks.json carries, so the build's own file is what loads.
 const BUNDLED: Marks = {
   version: 1,
-  slides: { 'three-habits-of-a-good-slide': { strokes: [{ id: 'bundled', tool: 'box', color: 'red', size: 6, points: [[300, 300, 0.5], [700, 600, 0.5]] }], notes: [] } },
+  slides: { 'lists-that-build': { strokes: [{ id: 'bundled', tool: 'box', color: 'red', size: 6, points: [[300, 300, 0.5], [700, 600, 0.5]] }], notes: [] } },
 };
 
 let site = '';
@@ -167,7 +167,7 @@ test.describe('static build', () => {
     await page.mouse.up();
     await expect(strokes(page)).toHaveCount(2);
     await expect
-      .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('dex:marks:demo') ?? 'null')?.slides?.['three-habits-of-a-good-slide']?.strokes?.length ?? 0))
+      .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('dex:marks:demo') ?? 'null')?.slides?.['lists-that-build']?.strokes?.length ?? 0))
       .toBe(2);
 
     await page.reload();
@@ -180,6 +180,19 @@ test.describe('static build', () => {
     await page.goto(`./#/demo/print`);
     await expect(page.locator('.print-sheet')).toHaveCount(22);
     await expect(page.locator('.print-sheet [data-stroke]')).toHaveCount(1);
+  });
+
+  test('the presenter window opens from the static build and the two windows drive each other', async ({ page, context }) => {
+    await open(page, '#/demo/2');
+    const [presenter] = await Promise.all([context.waitForEvent('page'), page.keyboard.press('p')]);
+    await presenter.waitForLoadState();
+    expect(presenter.url()).toBe(`${SUBDIR_URL}#/demo/presenter`);
+    await expect(presenter.locator('[data-counter]')).toHaveText('Slide 02 / 23');
+    await presenter.keyboard.press('ArrowDown');
+    await expect(counter(page)).toHaveText('03 / 23');
+    await page.keyboard.press('ArrowDown');
+    await expect(presenter.locator('[data-counter]')).toHaveText('Slide 04 / 23');
+    await presenter.close();
   });
 
   test('a deck that is not in the build says so', async ({ page }) => {

@@ -134,13 +134,12 @@ body {
 }
 
 /* Over a background image (data-bg="image") overlaid chrome sits on the picture
-   (docked chrome has its own space and needs nothing): labels step up one level, --ink-3 → --ink-2 and --ink-4 → --ink-3; the
-   hairlines stay. --ink-4 is resolved on .app from the inherited --ink-3, and
-   --ink-3 is replaced one level down, so the two steps do not chain. */
+   (docked chrome has its own space and needs nothing). One step up (Phase 4)
+   left the idle arrows, NOTE and DRAW close to invisible on a light picture
+   under the scrim, so both the labels and the idle affordances go to --ink-2,
+   as the print view's page number does over a picture (Phase 10). Hover is
+   still --ink; the hairlines stay. */
 .app[data-over-image]:not([data-dock]) {
-  --ink-4: var(--ink-3);
-}
-
-.app[data-over-image]:not([data-dock]) > * {
   --ink-3: var(--ink-2);
+  --ink-4: var(--ink-2);
 }

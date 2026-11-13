@@ -47,6 +47,9 @@
   font-size: calc(26px * var(--ts) * var(--density));
   line-height: 1.45;
   text-align: left;
+  /* A word longer than its line (a URL, a long identifier) breaks rather
+     than running off the slide. */
+  overflow-wrap: break-word;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -413,6 +416,31 @@
   border: 0;
 }
 
+/* A missing image (SlideView replaces the <img>): a 1px --line frame with the
+   path in it, set like a Label but in the path's own case, since paths are
+   case-sensitive. */
+.slide .broken-media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 240px;
+  min-height: 135px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: max(11px, calc(13px * var(--ts) * var(--density)));
+  line-height: 1.3;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.slide :is(p, li) > .broken-media {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
 /* ── The bleed layer (rendered by SlideView, first in the slide): the slide's
    background, extended past the stage to the edges of the stage area. When the
    window is not the stage's shape, this is what keeps a picture or a colour
@@ -446,7 +474,9 @@
   border-top: 1px solid var(--line);
   color: var(--ink-2);
   font-family: var(--font-sans);
-  font-size: max(11px, calc(13px * var(--ts) * var(--density)));
+  /* 16, not the 13 of the Caption role: at half the body size a source could
+     not be read from the back of a room (Phase 10, §8 updated). */
+  font-size: max(11px, calc(16px * var(--ts) * var(--density)));
   line-height: 1.4;
 }
 

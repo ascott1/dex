@@ -117,6 +117,20 @@
     color: var(--ink);
   }
 
+  /* Hit areas (Phase 10): the labels are 10px text and the swatches 10px
+     squares. Each grows by half the gap to its neighbours, so the areas meet
+     without overlapping; nothing visible moves. */
+  .tool::before,
+  .swatch::before {
+    content: '';
+    position: absolute;
+    inset: -4px -8px;
+  }
+
+  .swatch::before {
+    inset: -12px -5px;
+  }
+
   /* The active tool: a 2px --red underline 4px below the text. The labels are
      uppercase, so the text ends at the baseline, which DM Mono puts 2px above
      the bottom of the 10px line box: 8px padding − 2px − 4px gap − 2px rule. */
@@ -143,6 +157,7 @@
 
   .swatch {
     appearance: none;
+    position: relative;
     width: 10px;
     height: 10px;
     margin: 0;

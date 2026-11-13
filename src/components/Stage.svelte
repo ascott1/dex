@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
+  import { clampCamera } from '../lib/camera';
   import { clientToStage, fitStage, registerStageOverlay, stageSize } from '../lib/stage';
   import { attachZoom } from '../lib/zoom';
   import { deck } from '../state/deck.svelte';
@@ -52,6 +54,20 @@
 
   // Wheel, pinch and drag-to-pan (Phase 7, lib/zoom.ts).
   $effect(() => attachZoom(viewport));
+
+  // A live reload can change the deck's aspect, and so the stage width, while
+  // zoomed: clamp the camera again so no empty space shows inside the stage.
+  $effect(() => {
+    const { W, H } = size;
+    untrack(() => {
+      const c = clampCamera(ui.camera, W, H);
+      if (c.k === ui.camera.k && c.x === ui.camera.x && c.y === ui.camera.y) return;
+      ui.cameraAnimate = false;
+      ui.camera.k = c.k;
+      ui.camera.x = c.x;
+      ui.camera.y = c.y;
+    });
+  });
 
   // Drag-to-pan is armed while zoomed with no tool on (grab cursor).
   const pan = $derived(

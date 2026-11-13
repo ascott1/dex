@@ -112,13 +112,13 @@ describe('per-slide cache', () => {
     expect(compileStats.chunks).toBe(0);
 
     compileStats.chunks = 0;
-    const edited = src.replace('+ Say one thing', '+ Say one thing, clearly');
+    const edited = src.replace('+ Press → or Space to show the next item', '+ Press → or Space to show the next one');
     const second = await compileDeck(edited, { slug: 'demo' });
     expect(compileStats.chunks).toBe(1);
 
     const changed = second.slides.filter((s, i) => s.hash !== first.slides[i]!.hash).map((s) => s.index);
     expect(changed).toEqual([3]);
-    expect(second.slides[3]!.html).toContain('Say one thing, clearly');
+    expect(second.slides[3]!.html).toContain('to show the next one');
   });
 
   it('re-emits cached warnings with the right lines', async () => {

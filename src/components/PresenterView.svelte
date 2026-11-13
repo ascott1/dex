@@ -162,6 +162,15 @@
           >Blackout · any key returns</button>
         {/if}
       </div>
+
+      <p class="label heading">Notes</p>
+      <div class="notes" data-notes>
+        {#if current.notes}
+          {@html current.notes}
+        {:else}
+          <p class="label none">No notes</p>
+        {/if}
+      </div>
     </section>
 
     <aside class="side">
@@ -184,15 +193,6 @@
         >{timerText}</button>
         <span class="label" data-clock>{clockText}</span>
         {#if timer === 'paused'}<span class="label paused">Paused</span>{/if}
-      </div>
-
-      <p class="label heading">Notes</p>
-      <div class="notes" data-notes>
-        {#if current.notes}
-          {@html current.notes}
-        {:else}
-          <p class="label none">No notes</p>
-        {/if}
       </div>
     </aside>
   {/if}
@@ -222,14 +222,16 @@
   }
 
   /* The current slide is as wide as its column, unless the window is too
-     short: then it is as tall as fits with its labels under it. */
+     short: then it is as tall as fits with its labels and at least 220px of
+     notes under it. The notes sit under the current slide, where the eye
+     already is; at 1280×800 they fill what was empty space (Phase 10). */
   .frame {
     flex: none;
     border: 1px solid var(--line);
   }
 
   .frame.current {
-    width: min(100%, calc((100vh - 48px - 36px) * var(--ratio)));
+    width: min(100%, calc((100vh - 48px - 36px - 220px) * var(--ratio)));
   }
 
   .frame.next {
@@ -280,7 +282,7 @@
   }
 
   .heading {
-    margin: 0 0 12px;
+    margin: 20px 0 12px;
   }
 
   .name {
@@ -304,7 +306,7 @@
     display: flex;
     align-items: baseline;
     gap: 16px;
-    margin: 16px 0 28px;
+    margin: 16px 0 0;
   }
 
   .timer {
@@ -326,12 +328,14 @@
     transition: color var(--t-fast) var(--ease);
   }
 
+  /* Idle is --ink-3, not --ink-4, which on Ink was too faint to find at a
+     glance (Phase 10); paused is a step darker, with its PAUSED label. */
   .timer[data-timer='idle'] {
-    color: var(--ink-4);
+    color: var(--ink-3);
   }
 
   .timer[data-timer='paused'] {
-    color: var(--ink-3);
+    color: var(--ink-2);
   }
 
   .timer:hover {

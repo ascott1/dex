@@ -14,104 +14,104 @@ exports[`demo deck > matches the snapshot 1`] = `
     "build": false,
     "lang": "en",
     "theme": "paper",
-    "title": "dex demo",
+    "title": "dex",
     "transition": "fade",
   },
   "slides": [
     {
       "attrs": {},
-      "hash": "2a5a4d0018",
-      "html": "<div class="s-main"><header class="s-head"><h6>dex · demo deck</h6><h1>Markdown in, deck out</h1></header><div class="s-body"><p>A kitchen-sink deck that shows every layout the compiler can infer, written in plain Markdown.</p></div></div>",
-      "id": "markdown-in-deck-out",
+      "hash": "ece0f1b21f",
+      "html": "<div class="s-main"><header class="s-head"><h6>Markdown in, deck out</h6><h1>dex</h1></header><div class="s-body"><p>Write a talk as one Markdown file and present it from the browser. This deck is its own manual: press m on any slide to see the Markdown behind it.</p></div></div>",
+      "id": "dex",
       "index": 0,
       "layout": "title",
       "line": 7,
-      "notes": "<p>The title slide. An eyebrow, one display heading, and a lede add up to the title layout with no directive.</p>",
+      "notes": "<p>The title slide. An eyebrow line (six #), one # heading, and a short paragraph make a title slide with no layout syntax. Press m to see this slide's Markdown, and m again to close it.</p>",
       "options": {},
       "steps": 0,
-      "title": "Markdown in, deck out",
+      "title": "dex",
     },
     {
       "attrs": {
-        "data-len": "m",
+        "data-len": "s",
       },
-      "hash": "0e476cd1ae",
-      "html": "<div class="s-main"><div class="s-body"><p>Write the slide. The layout takes care of itself.</p></div></div>",
-      "id": "write-the-slide-the-layout-takes-care-of-itself",
+      "hash": "991c76dd63",
+      "html": "<div class="s-main"><div class="s-body"><p>Write the words. The layout follows.</p></div></div>",
+      "id": "write-the-words-the-layout-follows",
       "index": 1,
       "layout": "statement",
       "line": 17,
-      "notes": "<p>A statement slide. One short paragraph and no heading becomes very large type.</p>",
+      "notes": "<p>A statement. One short paragraph and no heading is set in very large type. Nothing on this slide says "statement"; dex reads it from what the slide contains.</p>",
       "options": {},
       "steps": 0,
-      "title": "Write the slide. The layout takes care of itself.",
+      "title": "Write the words. The layout follows.",
     },
     {
       "attrs": {
         "data-section": "01",
       },
-      "hash": "9710dbe470",
-      "html": "<div class="s-main"><header class="s-head"><h1>Layouts</h1></header></div>",
-      "id": "layouts",
+      "hash": "50f9ad381f",
+      "html": "<div class="s-main"><header class="s-head"><h1>How slides work</h1></header></div>",
+      "id": "how-slides-work",
       "index": 2,
       "layout": "section",
       "line": 23,
-      "notes": "<p>A section divider. A display heading on its own, anywhere but the first slide, becomes a numbered section.</p>",
+      "notes": "<p>A section divider. A # heading on its own, anywhere after the first slide, becomes a numbered section.</p>",
       "options": {},
       "steps": 0,
-      "title": "Layouts",
+      "title": "How slides work",
     },
     {
       "attrs": {},
-      "hash": "428cf8f879",
-      "html": "<div class="s-main"><header class="s-head"><h2>Three habits of a good slide</h2></header><div class="s-body"><ul>
-<li data-step="1">Say one thing</li>
-<li data-step="2">Show it as plainly as you can</li>
-<li data-step="3">Stop before the audience does</li>
+      "hash": "634e8ca3de",
+      "html": "<div class="s-main"><header class="s-head"><h2>Lists that build</h2></header><div class="s-body"><ul>
+<li data-step="1">Write a list with plus signs and it appears one item at a time</li>
+<li data-step="2">Press → or Space to show the next item</li>
+<li data-step="3">Lists written with - or * appear all at once</li>
 </ul></div></div>",
-      "id": "three-habits-of-a-good-slide",
+      "id": "lists-that-build",
       "index": 3,
       "layout": "default",
       "line": 29,
-      "notes": "<p>Builds. A list written with plus bullets reveals one item per step.</p>",
+      "notes": "<p>Builds. Each plus item is one step. Press ← to step back. Builds can be turned off for the whole deck in the settings (press s).</p>",
       "options": {},
       "steps": 3,
-      "title": "Three habits of a good slide",
+      "title": "Lists that build",
     },
     {
       "attrs": {},
-      "hash": "2bae79c76a",
-      "html": "<div class="s-main"><header class="s-head"><h2>How a slide is built</h2></header><div class="s-body"><ol>
-<li>Split the file at every line that is only three dashes</li>
-<li>Read the comments
+      "hash": "e2f93455ba",
+      "html": "<div class="s-main"><header class="s-head"><h2>What happens when you save</h2></header><div class="s-body"><ol>
+<li>The file is split into slides at every line of three dashes</li>
+<li>Comments are read
 <ul>
-<li>directives set the slide's options</li>
-<li>everything else becomes a speaker note</li>
+<li>a comment of key and value pairs sets options for its slide</li>
+<li>any other comment becomes a speaker note</li>
 </ul>
 </li>
-<li>Infer the layout from what is left</li>
-<li>Render the HTML and highlight the code</li>
+<li>The layout is chosen from what is left on the slide</li>
+<li>The open deck updates in place, without losing your place</li>
 </ol></div></div>",
-      "id": "how-a-slide-is-built",
+      "id": "what-happens-when-you-save",
       "index": 4,
       "layout": "default",
       "line": 39,
-      "notes": "<p>A numbered list with a nested list. The nested items appear with their parent.</p>",
+      "notes": "<p>A numbered list with a nested list. Nested items appear with their parent. This note is a speaker note, shown only in the presenter window (press p).</p>",
       "options": {},
       "steps": 0,
-      "title": "How a slide is built",
+      "title": "What happens when you save",
     },
     {
       "attrs": {
         "data-count": "3",
       },
-      "hash": "fd66d61bd1",
-      "html": "<div class="s-main"><header class="s-head"><h2>Two themes and a switch</h2></header><div class="s-cols"><section class="s-col"><h3>Paper</h3><p>A pale mint surface with near-black ink, for rooms with the lights on.</p></section><section class="s-col"><h3>Ink</h3><p>The same palette turned around, for dark rooms and late sessions.</p></section><section class="s-col"><h3>Invert</h3><p>One directive flips a single slide into the other theme.</p></section></div></div>",
+      "hash": "909f636eb5",
+      "html": "<div class="s-main"><header class="s-head"><h2>Two themes and a switch</h2></header><div class="s-cols"><section class="s-col"><h3>Paper</h3><p>A pale mint page with near-black ink, for rooms with the lights on. Press t to switch.</p></section><section class="s-col"><h3>Ink</h3><p>The same palette turned around, for dark rooms. Put <code>theme: ink</code> in the frontmatter to start there.</p></section><section class="s-col"><h3>Invert</h3><p>A comment of <code>invert: true</code> on a slide shows that one slide in the other theme.</p></section></div></div>",
       "id": "two-themes-and-a-switch",
       "index": 5,
       "layout": "columns",
       "line": 52,
-      "notes": "<p>Columns from third-level headings. Each heading starts a column.</p>",
+      "notes": "<p>Columns from ### headings. Two to six of them on one slide make one column each.</p>",
       "options": {},
       "steps": 0,
       "title": "Two themes and a switch",
@@ -120,47 +120,47 @@ exports[`demo deck > matches the snapshot 1`] = `
       "attrs": {
         "data-count": "2",
       },
-      "hash": "f1103532a6",
-      "html": "<div class="s-main"><header class="s-head"><h2>Before and after</h2></header><div class="s-cols"><section class="s-col"><p>Bullets that fill the slide, a title that says nothing, and a logo in every corner.</p></section><section class="s-col"><p>One idea per slide, a title that makes the point, and room around it to breathe.</p></section></div></div>",
-      "id": "before-and-after",
+      "hash": "cde870ec92",
+      "html": "<div class="s-main"><header class="s-head"><h2>Columns, two ways</h2></header><div class="s-cols"><section class="s-col"><p>Start each column with a ### heading, as on the last slide. Two to six of them make columns.</p></section><section class="s-col"><p>Or put a line of three pipes between blocks of text. Each block becomes a column.</p></section></div></div>",
+      "id": "columns-two-ways",
       "index": 6,
       "layout": "columns",
       "line": 70,
       "notes": "<p>Columns from a column break. A line of three pipes splits the content into columns.</p>",
       "options": {},
       "steps": 0,
-      "title": "Before and after",
+      "title": "Columns, two ways",
     },
     {
       "attrs": {
         "data-image": "right",
         "data-imgfit": "cover",
       },
-      "hash": "dfc96eff34",
-      "html": "<div class="s-main"><header class="s-head"><h2>Images sit beside the text</h2></header><div class="s-body"><p>When a slide has one image and some text, the image takes half of the canvas. Put the image last and it goes on the right.</p></div></div>
+      "hash": "971ba0160c",
+      "html": "<div class="s-main"><header class="s-head"><h2>An image beside the text</h2></header><div class="s-body"><p>One image and some text split the slide in half. Put the image after the text and it goes on the right.</p></div></div>
 <div class="s-media"><figure class="media"><img src="decks/demo/media/plate-1.svg" alt="A grid of squares" draggable="false" decoding="async"></figure></div>",
-      "id": "images-sit-beside-the-text",
+      "id": "an-image-beside-the-text",
       "index": 7,
       "layout": "split",
       "line": 82,
-      "notes": "<p>A split slide with the image on the right, because the image comes last in the source.</p>",
+      "notes": "<p>A split slide with the image on the right, because the image comes last in the source. Images live in the deck's folder; this one is media/plate-1.svg.</p>",
       "options": {},
       "steps": 0,
-      "title": "Images sit beside the text",
+      "title": "An image beside the text",
     },
     {
       "attrs": {
         "data-image": "left",
         "data-imgfit": "contain",
       },
-      "hash": "61732755f2",
-      "html": "<div class="s-main"><header class="s-head"><h2>Or on the left</h2></header><div class="s-body"><p>Put the image first and it takes the left half. The fit directive keeps the whole image in view instead of cropping it.</p></div></div>
+      "hash": "939f762167",
+      "html": "<div class="s-main"><header class="s-head"><h2>Or on the left</h2></header><div class="s-body"><p>Put the image first and it goes on the left. A <code>fit: contain</code> comment shows the whole image instead of cropping it to fill.</p></div></div>
 <div class="s-media"><figure class="media"><img src="decks/demo/media/plate-2.svg" alt="Concentric squares" draggable="false" decoding="async"></figure></div>",
       "id": "or-on-the-left",
       "index": 8,
       "layout": "split",
       "line": 92,
-      "notes": "<p>A split slide with the image on the left, contained rather than cropped.</p>",
+      "notes": "<p>A split slide with the image on the left, contained rather than cropped by the fit directive at the top of the slide.</p>",
       "options": {
         "fit": "contain",
       },
@@ -171,29 +171,29 @@ exports[`demo deck > matches the snapshot 1`] = `
       "attrs": {
         "data-imgfit": "contain",
       },
-      "hash": "f9d2896de1",
-      "html": "<div class="s-main"><header class="s-head"><h2>A figure is a title and one image</h2></header></div>
-<div class="s-media"><figure class="media"><img src="decks/demo/media/plate-3.svg" alt="Lines of different lengths" draggable="false" decoding="async"><figcaption>Plate three · lines</figcaption></figure></div>",
-      "id": "a-figure-is-a-title-and-one-image",
+      "hash": "036e1e155c",
+      "html": "<div class="s-main"><header class="s-head"><h2>A heading and one image make a figure</h2></header></div>
+<div class="s-media"><figure class="media"><img src="decks/demo/media/plate-3.svg" alt="Lines of different lengths" draggable="false" decoding="async"><figcaption>A quoted title after the path becomes this caption</figcaption></figure></div>",
+      "id": "a-heading-and-one-image-make-a-figure",
       "index": 9,
       "layout": "figure",
       "line": 104,
-      "notes": "<p>A figure slide. A heading plus a single image puts the title on top and lets the image fill the rest.</p>",
+      "notes": "<p>A figure. A heading plus a single image puts the title on top and lets the image fill the rest. The text in quotes after the path is the caption.</p>",
       "options": {},
       "steps": 0,
-      "title": "A figure is a title and one image",
+      "title": "A heading and one image make a figure",
     },
     {
       "attrs": {
         "data-imgfit": "cover",
       },
-      "hash": "441e5e8a15",
-      "html": "<div class="s-media"><figure class="media"><img src="decks/demo/media/plate-4.svg" alt="A grid with one large square" draggable="false" decoding="async"><figcaption>Plate four · full bleed</figcaption></figure></div>",
+      "hash": "7293722b46",
+      "html": "<div class="s-media"><figure class="media"><img src="decks/demo/media/plate-4.svg" alt="A grid with one large square" draggable="false" decoding="async"><figcaption>An image on its own fills the screen</figcaption></figure></div>",
       "id": "a-grid-with-one-large-square",
       "index": 10,
       "layout": "image",
       "line": 112,
-      "notes": "<p>A full-bleed image. One image alone covers the stage, and its quoted title becomes the caption.</p>",
+      "notes": "<p>A full-bleed image. One image alone covers the whole screen, and its quoted title becomes the caption.</p>",
       "options": {},
       "steps": 0,
       "title": "A grid with one large square",
@@ -202,22 +202,23 @@ exports[`demo deck > matches the snapshot 1`] = `
       "attrs": {
         "data-count": "3",
       },
-      "hash": "468e94ec06",
-      "html": "<div class="s-media"><figure class="media"><img src="decks/demo/media/plate-1.svg" alt="A grid of squares" draggable="false" decoding="async"></figure><figure class="media"><img src="decks/demo/media/plate-2.svg" alt="Concentric squares" draggable="false" decoding="async"></figure><figure class="media"><img src="decks/demo/media/plate-3.svg" alt="Lines of different lengths" draggable="false" decoding="async"></figure></div>",
-      "id": "a-grid-of-squares-concentric-squares-lines-of-different-leng",
+      "hash": "d387101c04",
+      "html": "<div class="s-main"><header class="s-head"><h2>Two or more images make a gallery</h2></header></div>
+<div class="s-media"><figure class="media"><img src="decks/demo/media/plate-1.svg" alt="A grid of squares" draggable="false" decoding="async"></figure><figure class="media"><img src="decks/demo/media/plate-2.svg" alt="Concentric squares" draggable="false" decoding="async"></figure><figure class="media"><img src="decks/demo/media/plate-3.svg" alt="Lines of different lengths" draggable="false" decoding="async"></figure></div>",
+      "id": "two-or-more-images-make-a-gallery",
       "index": 11,
       "layout": "gallery",
       "line": 118,
-      "notes": "<p>A gallery. Three images and nothing else are laid out in a grid.</p>",
+      "notes": "<p>A gallery. Images and nothing else, with an optional heading, are laid out in a grid.</p>",
       "options": {},
       "steps": 0,
-      "title": "A grid of squares Concentric squares Lines of different leng",
+      "title": "Two or more images make a gallery",
     },
     {
       "attrs": {
         "data-len": "m",
       },
-      "hash": "fc672a6770",
+      "hash": "63668cd513",
       "html": "<div class="s-main"><div class="s-body"><blockquote>
 <p>Simplicity is about subtracting the obvious and adding the meaningful.</p>
 <p class="attrib">John Maeda</p>
@@ -225,8 +226,8 @@ exports[`demo deck > matches the snapshot 1`] = `
       "id": "simplicity-is-about-subtracting-the-obvious-and-adding-the-m",
       "index": 12,
       "layout": "quote",
-      "line": 126,
-      "notes": "<p>A quote slide. A blockquote on its own, with the last line taken as the attribution.</p>",
+      "line": 128,
+      "notes": "<p>A quote slide. A blockquote on its own, and a last line starting with a dash is the attribution.</p>",
       "options": {},
       "steps": 0,
       "title": "Simplicity is about subtracting the obvious and adding the m",
@@ -240,7 +241,7 @@ exports[`demo deck > matches the snapshot 1`] = `
       "id": "23-slides-in-this-deck-all-in-one-markdown-file",
       "index": 13,
       "layout": "statement",
-      "line": 134,
+      "line": 136,
       "notes": "<p>A big number. A first paragraph of eight characters or fewer becomes a giant figure, and the second paragraph its label.</p>",
       "options": {},
       "steps": 0,
@@ -248,25 +249,25 @@ exports[`demo deck > matches the snapshot 1`] = `
     },
     {
       "attrs": {},
-      "hash": "3198c3d3ca",
-      "html": "<div class="s-main"><header class="s-head"><h2>Highlight the lines that matter</h2></header><div class="s-body"><pre class="shiki dex" style="background-color:var(--shiki-background);color:var(--shiki-foreground)" tabindex="0"><code><span class="line"><span style="color:var(--shiki-token-keyword)">export</span><span style="color:var(--shiki-token-keyword)"> async</span><span style="color:var(--shiki-token-keyword)"> function</span><span style="color:var(--shiki-token-function)"> compileDeck</span><span style="color:var(--shiki-foreground)">(source</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> string</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-foreground)"> opts</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-foreground)"> { slug</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> string</span><span style="color:var(--shiki-foreground)"> }) {</span></span>
-<span class="line highlighted"><span style="color:var(--shiki-token-keyword)">  const</span><span style="color:var(--shiki-foreground)"> { </span><span style="color:var(--shiki-token-constant)">meta</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-constant)"> body</span><span style="color:var(--shiki-foreground)"> } </span><span style="color:var(--shiki-token-keyword)">=</span><span style="color:var(--shiki-token-function)"> parseFrontmatter</span><span style="color:var(--shiki-foreground)">(source);</span></span>
-<span class="line"><span style="color:var(--shiki-token-keyword)">  const</span><span style="color:var(--shiki-token-constant)"> chunks</span><span style="color:var(--shiki-token-keyword)"> =</span><span style="color:var(--shiki-token-function)"> splitSlides</span><span style="color:var(--shiki-foreground)">(body);</span></span>
-<span class="line highlighted"><span style="color:var(--shiki-token-keyword)">  const</span><span style="color:var(--shiki-token-constant)"> slides</span><span style="color:var(--shiki-token-keyword)"> =</span><span style="color:var(--shiki-token-keyword)"> await</span><span style="color:var(--shiki-token-constant)"> Promise</span><span style="color:var(--shiki-token-function)">.all</span><span style="color:var(--shiki-foreground)">(</span><span style="color:var(--shiki-token-constant)">chunks</span><span style="color:var(--shiki-token-function)">.map</span><span style="color:var(--shiki-foreground)">(compileChunk));</span></span>
-<span class="line highlighted"><span style="color:var(--shiki-token-keyword)">  return</span><span style="color:var(--shiki-foreground)"> { slug</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-constant)"> opts</span><span style="color:var(--shiki-foreground)">.slug</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-foreground)"> meta</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-foreground)"> slides };</span></span>
+      "hash": "ec749ab7fb",
+      "html": "<div class="s-main"><header class="s-head"><h2>Highlight the lines that matter</h2></header><div class="s-body"><p>Put line numbers in braces after the language: <code>\`\`\`ts {3,5}</code>.</p><pre class="shiki dex" style="background-color:var(--shiki-background);color:var(--shiki-foreground)" tabindex="0"><code><span class="line"><span style="color:var(--shiki-token-comment)">// Compile a deck and list its slides.</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">const</span><span style="color:var(--shiki-foreground)"> source </span><span style="color:var(--shiki-token-keyword)">=</span><span style="color:var(--shiki-token-keyword)"> await</span><span style="color:var(--shiki-token-function)"> readFile</span><span style="color:var(--shiki-foreground)">(</span><span style="color:var(--shiki-token-string-expression)">'decks/demo/deck.md'</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-token-string-expression)"> 'utf8'</span><span style="color:var(--shiki-foreground)">);</span></span>
+<span class="line highlighted"><span style="color:var(--shiki-token-keyword)">const</span><span style="color:var(--shiki-foreground)"> deck </span><span style="color:var(--shiki-token-keyword)">=</span><span style="color:var(--shiki-token-keyword)"> await</span><span style="color:var(--shiki-token-function)"> compileDeck</span><span style="color:var(--shiki-foreground)">(source</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-foreground)"> { slug</span><span style="color:var(--shiki-token-keyword)">:</span><span style="color:var(--shiki-token-string-expression)"> 'demo'</span><span style="color:var(--shiki-foreground)"> });</span></span>
+<span class="line"><span style="color:var(--shiki-token-keyword)">for</span><span style="color:var(--shiki-foreground)"> (</span><span style="color:var(--shiki-token-keyword)">const</span><span style="color:var(--shiki-foreground)"> slide </span><span style="color:var(--shiki-token-keyword)">of</span><span style="color:var(--shiki-foreground)"> deck.slides) {</span></span>
+<span class="line highlighted"><span style="color:var(--shiki-foreground)">  console</span><span style="color:var(--shiki-token-function)">.log</span><span style="color:var(--shiki-foreground)">(slide.index </span><span style="color:var(--shiki-token-keyword)">+</span><span style="color:var(--shiki-token-constant)"> 1</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-foreground)"> slide.layout</span><span style="color:var(--shiki-token-punctuation)">,</span><span style="color:var(--shiki-foreground)"> slide.title </span><span style="color:var(--shiki-token-keyword)">??</span><span style="color:var(--shiki-token-string-expression)"> 'untitled'</span><span style="color:var(--shiki-foreground)">);</span></span>
 <span class="line"><span style="color:var(--shiki-foreground)">}</span></span></code></pre></div></div>",
       "id": "highlight-the-lines-that-matter",
       "index": 14,
       "layout": "default",
-      "line": 142,
-      "notes": "<p>A code block with highlighted lines. The braces after the language pick lines two, four, and five.</p>",
+      "line": 144,
+      "notes": "<p>A code block with highlighted lines. The other lines dim so the audience knows where to look. Code blocks are highlighted for most common languages.</p>",
       "options": {},
       "steps": 0,
       "title": "Highlight the lines that matter",
     },
     {
       "attrs": {},
-      "hash": "458b2275d3",
+      "hash": "83add81e0d",
       "html": "<div class="s-main"><header class="s-head"><h2>Layouts at a glance</h2></header><div class="s-body"><table>
 <thead>
 <tr>
@@ -276,11 +277,11 @@ exports[`demo deck > matches the snapshot 1`] = `
 </thead>
 <tbody>
 <tr>
-<td>A display heading and a lede</td>
+<td>A # heading and a short paragraph</td>
 <td>title</td>
 </tr>
 <tr>
-<td>One short paragraph</td>
+<td>One short paragraph, no heading</td>
 <td>statement</td>
 </tr>
 <tr>
@@ -288,7 +289,11 @@ exports[`demo deck > matches the snapshot 1`] = `
 <td>split</td>
 </tr>
 <tr>
-<td>Two or more third-level headings</td>
+<td>A heading and one image</td>
+<td>figure</td>
+</tr>
+<tr>
+<td>Two to six ### headings</td>
 <td>columns</td>
 </tr>
 <tr>
@@ -300,20 +305,20 @@ exports[`demo deck > matches the snapshot 1`] = `
       "id": "layouts-at-a-glance",
       "index": 15,
       "layout": "default",
-      "line": 157,
-      "notes": "<p>A table. Header cells are set in small mono capitals, with hairlines between rows.</p>",
+      "line": 161,
+      "notes": "<p>A table. Header cells are set in small mono capitals, with hairlines between rows. When the inferred layout is not what you want, a layout comment overrides it.</p>",
       "options": {},
       "steps": 0,
       "title": "Layouts at a glance",
     },
     {
       "attrs": {},
-      "hash": "10ce30d2e8",
-      "html": "<div class="s-main"><header class="s-head"><h2>One thought at a time</h2></header><div class="s-body"><p>A paragraph can wait its turn.</p><p data-step="1">A line of three spaced dots is a pause.</p><p data-step="2">Everything after it appears on the next step.</p></div></div>",
+      "hash": "7f792ca511",
+      "html": "<div class="s-main"><header class="s-head"><h2>One thought at a time</h2></header><div class="s-body"><p>Some points need a moment to land.</p><p data-step="1">A line of three spaced dots is a pause.</p><p data-step="2">Everything after it waits for the next press.</p></div></div>",
       "id": "one-thought-at-a-time",
       "index": 16,
       "layout": "default",
-      "line": 171,
+      "line": 176,
       "notes": "<p>Pauses. Each line of three spaced dots holds back the rest of the slide for one more step.</p>",
       "options": {},
       "steps": 2,
@@ -323,77 +328,77 @@ exports[`demo deck > matches the snapshot 1`] = `
       "attrs": {
         "data-len": "s",
       },
-      "hash": "9c6515aab3",
-      "html": "<div class="s-main"><div class="s-body"><p>This slide is shown in the other theme.</p></div></div>",
-      "id": "this-slide-is-shown-in-the-other-theme",
+      "hash": "7721e8701b",
+      "html": "<div class="s-main"><div class="s-body"><p>One comment turns a single slide around.</p></div></div>",
+      "id": "one-comment-turns-a-single-slide-around",
       "index": 17,
       "layout": "statement",
-      "line": 187,
-      "notes": "<p>An inverted slide. The invert directive flips this one slide, and the bars follow it.</p>",
+      "line": 192,
+      "notes": "<p>An inverted slide. The invert directive shows this one slide in the other theme, and the bars follow it.</p>",
       "options": {
         "invert": true,
       },
       "steps": 0,
-      "title": "This slide is shown in the other theme.",
+      "title": "One comment turns a single slide around.",
     },
     {
       "attrs": {
         "data-bg": "image",
         "style": "--slide-bg: url("decks/demo/media/plate-4.svg")",
       },
-      "hash": "faf1a972cc",
-      "html": "<div class="s-main"><header class="s-head"><h2>Background images</h2></header><div class="s-body"><p>A bg directive puts an image behind the slide, under a dark scrim, and switches the slide to Ink.</p></div></div>",
-      "id": "background-images",
+      "hash": "42a7b03baa",
+      "html": "<div class="s-main"><header class="s-head"><h2>A picture behind the words</h2></header><div class="s-body"><p>A bg comment puts an image behind the slide, under a dark scrim, and switches the slide to Ink. It takes a CSS colour too.</p></div></div>",
+      "id": "a-picture-behind-the-words",
       "index": 18,
       "layout": "default",
-      "line": 195,
-      "notes": "<p>A background image slide. The bg directive takes an image path or a CSS color.</p>",
+      "line": 200,
+      "notes": "<p>A background image. The bg directive takes an image path or a CSS colour.</p>",
       "options": {
         "bg": "decks/demo/media/plate-4.svg",
       },
       "steps": 0,
-      "title": "Background images",
+      "title": "A picture behind the words",
     },
     {
       "attrs": {},
-      "hash": "8ae4689bc0",
-      "html": "<div class="s-main"><header class="s-head"><h2>Sources go in footnotes</h2></header><div class="s-body"><p>The stage is a fixed canvas of 1600 by 900 logical pixels, scaled to fit the window.<sup><a href="#fn-8ae4689bc0-fn-stage" id="fn-8ae4689bc0-fnref-stage" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup></p></div></div>
+      "hash": "bc4a81a2c0",
+      "html": "<div class="s-main"><header class="s-head"><h2>Sources go in footnotes</h2></header><div class="s-body"><p>Every slide is laid out on a fixed canvas of 1600 by 900 points and scaled to fit the screen.<sup><a href="#fn-bc4a81a2c0-fn-stage" id="fn-bc4a81a2c0-fnref-stage" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup></p></div></div>
 <section data-footnotes="" class="footnotes"><h2 class="sr-only" id="footnote-label">Footnotes</h2>
 <ol>
-<li id="fn-8ae4689bc0-fn-stage">
-<p>Fixed coordinates are what make zoom, drawing, sticky notes, and print line up exactly. <a href="#fn-8ae4689bc0-fnref-stage" data-footnote-backref="" aria-label="Back to reference 1" class="data-footnote-backref">↩</a></p>
+<li id="fn-bc4a81a2c0-fn-stage">
+<p>That is why drawings, sticky notes, zoom, and the PDF all line up with the slide. <a href="#fn-bc4a81a2c0-fnref-stage" data-footnote-backref="" aria-label="Back to reference 1" class="data-footnote-backref">↩</a></p>
 </li>
 </ol>
 </section>",
       "id": "sources-go-in-footnotes",
       "index": 19,
       "layout": "default",
-      "line": 205,
-      "notes": "<p>A footnote. The definition must sit on the same slide as its reference, and it renders at the bottom.</p>",
+      "line": 210,
+      "notes": "<p>A footnote. The definition must sit on the same slide as its reference, and it is shown at the bottom of the slide.</p>",
       "options": {},
       "steps": 0,
       "title": "Sources go in footnotes",
     },
     {
       "attrs": {},
-      "hash": "27f2fd3404",
-      "html": "<div class="s-main"><header class="s-head"><h2>A hidden slide</h2></header><div class="s-body"><p>This slide stays in the overview, dimmed, but presenting skips right past it.</p></div></div>",
-      "id": "a-hidden-slide",
+      "hash": "4d8b862ec3",
+      "html": "<div class="s-main"><header class="s-head"><h2>A skipped slide</h2></header><div class="s-body"><p>Presenting goes straight past this slide. It stays in the overview, dimmed, for the question you might get.</p></div></div>",
+      "id": "a-skipped-slide",
       "index": 20,
       "layout": "default",
-      "line": 215,
-      "notes": "<p>A skipped slide. The skip directive leaves it out of the presentation without deleting it.</p>",
+      "line": 220,
+      "notes": "<p>A skipped slide. The skip directive leaves it out of the talk without deleting it. Press g for the overview and pick it to show it anyway.</p>",
       "options": {
         "skip": true,
       },
       "steps": 0,
-      "title": "A hidden slide",
+      "title": "A skipped slide",
     },
     {
       "attrs": {},
-      "hash": "eceac5cd8d",
+      "hash": "2a4ad28544",
       "html": "<div class="s-main"><header class="s-head"><h2>Fourteen bullets is too many</h2></header><div class="s-body"><ul>
-<li>The first bullet sets up the topic and promises that the rest will be brief</li>
+<li>This slide does not fit at full size, so the type steps down until it does</li>
 <li>The second bullet adds a qualification that nobody in the room asked for</li>
 <li>The third bullet repeats the first one in slightly different words</li>
 <li>The fourth bullet introduces an acronym that is never explained again</li>
@@ -411,24 +416,24 @@ exports[`demo deck > matches the snapshot 1`] = `
       "id": "fourteen-bullets-is-too-many",
       "index": 21,
       "layout": "default",
-      "line": 225,
-      "notes": "<p>An overflow stress test. Fourteen long bullets do not fit, so the runtime steps the density down until they do.</p>",
+      "line": 230,
+      "notes": "<p>Too much text. When a slide overflows, dex sets its type smaller, in two steps, until it fits. If it still does not fit, the dev server flags it with OVERFLOW.</p>",
       "options": {},
       "steps": 0,
       "title": "Fourteen bullets is too many",
     },
     {
       "attrs": {},
-      "hash": "60c9ec5ec7",
-      "html": "<div class="s-main"><header class="s-head"><h1>Thank you</h1></header><div class="s-body"><p>Edit this deck in decks/demo/deck.md and save. The open deck updates in place.</p></div></div>",
-      "id": "thank-you",
+      "hash": "bcd23a56be",
+      "html": "<div class="s-main"><header class="s-head"><h1>Your turn</h1></header><div class="s-body"><p>Run <code>pnpm new my-talk</code>, open <code>decks/my-talk/deck.md</code> in your editor, and start writing. Press s for settings and the full list of keys.</p></div></div>",
+      "id": "your-turn",
       "index": 22,
       "layout": "title",
-      "line": 246,
-      "notes": "<p>A closing title slide. A display heading with a lede is a title layout at the end of the deck too.</p>",
+      "line": 251,
+      "notes": "<p>A closing title slide. A # heading with a short paragraph is a title slide at the end of a deck too.</p>",
       "options": {},
       "steps": 0,
-      "title": "Thank you",
+      "title": "Your turn",
     },
   ],
   "slug": "demo",

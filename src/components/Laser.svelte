@@ -68,11 +68,18 @@
 
 <svg bind:this={svg} class="laser" aria-hidden="true">
   {#if on && dot}
-    {#each trail as p, i (i)}
-      {@const age = Math.min(1, (now - p.t) / TRAIL_MS)}
-      {@const rank = (i + 1) / (trail.length + 1)}
-      <circle cx={p.x} cy={p.y} r={7 * (0.35 + 0.65 * rank)} opacity={0.5 * rank * (1 - age)} />
-    {/each}
+    <!-- The trail is one tapering streak, not a row of dots: each segment joins
+         two consecutive positions, thinner and fainter towards the tail. The
+         group's opacity is applied once, so overlapping round caps do not
+         darken the joints. -->
+    <g class="trail" opacity="0.5">
+      {#each trail as p, i (i)}
+        {@const to = trail[i + 1] ?? dot}
+        {@const age = Math.min(1, (now - p.t) / TRAIL_MS)}
+        {@const rank = (i + 1) / (trail.length + 1)}
+        <line x1={p.x} y1={p.y} x2={to.x} y2={to.y} stroke-width={14 * (0.2 + 0.8 * rank) * (1 - age)} />
+      {/each}
+    </g>
     <circle class="dot" cx={dot.x} cy={dot.y} r="7" />
   {/if}
 </svg>
@@ -91,6 +98,11 @@
 
   circle {
     fill: var(--red);
+  }
+
+  line {
+    stroke: var(--red);
+    stroke-linecap: round;
   }
 
   /* The system cursor is hidden while the laser is on. */

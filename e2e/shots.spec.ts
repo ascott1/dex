@@ -263,6 +263,95 @@ for (const theme of ['paper', 'ink'] as const) {
   });
 }
 
+// Phase 10 details, in both themes, into docs/shots/details/: the overlaid
+// chrome over a `bg` picture in fullscreen at 1920×1080, the marker and pen on
+// a slide, the laser's trail, the overview with the current slide selected, and
+// a missing image. Marks go to a temporary deck, never the demo's marks.json.
+for (const theme of ['paper', 'ink'] as const) {
+  test(`details, ${theme}`, async ({ page }) => {
+    const dir = join(OUT, 'details');
+    mkdirSync(dir, { recursive: true });
+    const slug = 'zz-e2e-details';
+    rmSync(join(DECKS, slug), { recursive: true, force: true });   // no marks left from the other theme
+    writeDeck(slug, [
+      '## Marks on a slide\n\nA highlighter should read as a highlighter in both themes, over text and over the page.',
+      '## A missing picture\n\nThe image beside this text is not in the deck folder.\n\n![A desk](media/desk.jpg)',
+    ].join('\n\n---\n\n'));
+    await page.addInitScript(([theme, slug]) => {
+      localStorage.setItem('dex:settings', JSON.stringify({ motion: false }));
+      localStorage.setItem('dex:theme:demo', theme);
+      localStorage.setItem(`dex:theme:${slug}`, theme);
+    }, [theme, slug] as const);
+    const settle = () => page.evaluate(async () => {
+      await document.fonts.ready;
+      await Promise.all([...document.querySelectorAll<HTMLImageElement>('img')].map((i) => i.decode().catch(() => null)));
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    });
+
+    // Overlaid chrome over the demo's bg picture, in fullscreen at 1920×1080.
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.goto('/#/demo/19');
+    await expect(page.locator('.slides > .slide.current[data-bg="image"]')).toHaveCount(1);
+    await page.keyboard.press('f');
+    await expect.poll(() => page.evaluate(() => document.fullscreenElement !== null)).toBe(true);
+    await page.mouse.move(960, 540);
+    await expect(page.locator('.app')).toHaveAttribute('data-chrome', 'shown');
+    await expect(page.locator('.app')).not.toHaveAttribute('data-dock', /.*/);
+    await settle();
+    await page.screenshot({ path: join(dir, `${theme}-fullscreen-bg-chrome.png`) });
+    await page.locator('.bottombar').screenshot({ path: join(dir, `${theme}-fullscreen-bg-bottombar.png`) });
+    await page.keyboard.press('f');
+    await expect.poll(() => page.evaluate(() => document.fullscreenElement === null)).toBe(true);
+
+    // Marker and pen strokes across the text.
+    await page.setViewportSize({ width: 1600, height: 900 });
+    await page.goto(`/#/${slug}/1`);
+    await page.waitForFunction(() => (window as unknown as { __dex: { marks: { loaded: boolean } } }).__dex.marks.loaded);
+    const p = await page.locator('.slides > .slide.current p').boundingBox();
+    await page.keyboard.press('d');
+    await page.locator('.drawbar').getByRole('button', { name: 'Marker', exact: true }).click();
+    await page.mouse.move(p!.x - 10, p!.y + 22);
+    await page.mouse.down();
+    await page.mouse.move(p!.x + 620, p!.y + 22, { steps: 20 });
+    await page.mouse.up();
+    await page.locator('.drawbar').getByRole('button', { name: 'Pen', exact: true }).click();
+    await page.mouse.move(p!.x + 700, p!.y + 140);
+    await page.mouse.down();
+    await page.mouse.move(p!.x + 900, p!.y + 200, { steps: 20 });
+    await page.mouse.up();
+    await page.keyboard.press('d');
+    await settle();
+    await page.locator('.viewport').screenshot({ path: join(dir, `${theme}-marks.png`) });
+
+    // The laser mid-sweep: the trail is one streak behind the dot.
+    await page.keyboard.press('l');
+    await page.mouse.move(300, 600);
+    for (let i = 1; i <= 12; i++) await page.mouse.move(300 + i * 40, 600 - i * 12);
+    await page.locator('.viewport').screenshot({ path: join(dir, `${theme}-laser.png`) });
+    await page.keyboard.press('l');
+
+    // A missing image.
+    await page.keyboard.press('ArrowRight');
+    await expect(page.locator('.slides > .slide.current .broken-media')).toHaveCount(1);
+    await settle();
+    await page.locator('.viewport').screenshot({ path: join(dir, `${theme}-missing-image.png`) });
+
+    // The overview with the selection on the current slide: one frame, not two.
+    await page.goto('/#/demo/4');
+    await expect(page.locator('.slides > .slide.current')).toHaveCount(1);
+    await page.keyboard.press('g');
+    await expect(page.locator('.overview .thumb.current .hit')).toBeFocused();
+    await settle();
+    const thumb = (await page.locator('.overview .thumb.current').boundingBox())!;
+    await page.screenshot({
+      path: join(dir, `${theme}-overview-current.png`),
+      clip: { x: thumb.x - 12, y: thumb.y - 12, width: thumb.width + 24, height: thumb.height + 24 },
+    });
+    await page.keyboard.press('ArrowRight');
+    await page.screenshot({ path: join(dir, `${theme}-overview.png`) });
+  });
+}
+
 // Phase 8: the presenter window at 1280×800 (the size `p` opens), in both
 // themes: a slide with notes and builds, a slide without notes, and the last
 // slide; and the audience window in blackout. Into docs/shots/presenter/.

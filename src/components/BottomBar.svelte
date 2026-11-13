@@ -105,6 +105,14 @@
     gap: 24px;
   }
 
+  /* NOTE, DRAW, the zoom percentage and the warnings label are 10px text: the
+     padding gives each a 34px-tall hit area without moving the text, and the
+     8px on each side leaves 8px between neighbouring hit areas. */
+  .right > .label-btn {
+    padding: 12px 8px;
+    margin: -12px -8px;
+  }
+
   button {
     pointer-events: auto;
   }
@@ -116,12 +124,14 @@
     margin: 0 -6px;
   }
 
+  /* The Label's 0.12em tracking adds 1.2px after each glyph, which put → at
+     51 and the counter at 71; it is taken back here (Phase 10). */
   .arrow + .arrow {
-    margin-left: calc(24px - 6px);
+    margin-left: calc(24px - 6px - 0.12em);
   }
 
   .counter {
-    margin-left: 13px;
+    margin-left: calc(13px - 0.12em);
   }
 
   /* Digits typed for go-to-slide (lib/overlays.ts). */

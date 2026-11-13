@@ -31,7 +31,7 @@ export function demoDeckTests({ dev }: { dev: boolean }): void {
     await page.goto('./');
     await expect(counter(page)).toHaveText(`01 / ${COUNT}`);
     await expect(page).toHaveURL(/#\/demo\/1$/);
-    await expect(page.locator('.topbar .label')).toHaveText('dex demo');
+    await expect(page.locator('.topbar .label')).toHaveText('dex');
   });
 
   test('→ reveals one build step per press, then moves on; ← returns fully revealed; ↓ skips builds', async ({ page }) => {

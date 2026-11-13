@@ -256,7 +256,11 @@
     mix-blend-mode: multiply;
   }
 
+  /* On Ink, 45% of the yellow screened over a near-black page is a dull olive.
+     At 60% it reads as a highlighter, and screen keeps the light text under
+     it light (Phase 10). */
   :global([data-theme='ink']) .marker {
+    opacity: 0.6;
     mix-blend-mode: screen;
   }
 

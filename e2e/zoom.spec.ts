@@ -1,7 +1,7 @@
 // Phase 7: zoom and pan (PLAN.md §9 Phase 7). Runs on a temporary deck under
 // decks/zz-e2e-*, since some tests draw and place notes, which saves marks.
 
-import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { DECKS, removeTempDecks, writeDeck } from './temp-deck.ts';
@@ -444,6 +444,23 @@ test.describe.serial('zoom and pan', () => {
     await expect(page).toHaveURL(/\/2$/);
     expect(await camera(page)).toEqual({ k: 1, x: 0, y: 0 });
     await expect(zoomLabel(page)).toHaveCount(0);
+  });
+
+  test('a live reload that narrows the stage while zoomed clamps the camera again', async ({ page }) => {
+    await open(page, 2);
+    // Zoom to 200% at the bottom-right corner: the camera sits at the edge of the clamp.
+    const at = await client(page, 1500, 800);
+    await page.mouse.move(at.x, at.y);
+    await page.keyboard.press('z');
+    await expectZoom(page, 2);
+    await expectCamera(page, { k: 2, x: -1500, y: -800 });
+
+    // The same deck at 4:3: the stage is 1200 wide, so x may go no lower than -1200.
+    const source = readFileSync(join(DECKS, SLUG, 'deck.md'), 'utf8');
+    writeFileSync(join(DECKS, SLUG, 'deck.md'), `---\naspect: "4:3"\n---\n\n${source}`);
+    await expect(page.locator('.stage')).toHaveCSS('width', '1200px', { timeout: 10_000 });
+    await expect.poll(() => camera(page)).toEqual({ k: 2, x: -1200, y: -800 });
+    expect(await covers(page)).toBe(true);
   });
 });
 

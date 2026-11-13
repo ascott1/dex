@@ -90,7 +90,8 @@
   });
 
   $effect(() => {
-    const title = deck.current ? `${deck.current.meta.title} · dex` : 'dex';
+    // A deck called "dex" (the demo) is not "dex · dex".
+    const title = deck.current && deck.current.meta.title !== 'dex' ? `${deck.current.meta.title} · dex` : 'dex';
     // In print the title is the PDF's default file name: the deck's own title.
     document.title =
       route.view === 'presenter' ? `Presenter · ${title}`

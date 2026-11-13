@@ -323,6 +323,12 @@
     outline-offset: 0;
   }
 
+  /* On the current slide the --ink frame already marks it: a ring 4px
+     outside that frame read as a double border. */
+  .thumb.current .hit:focus-visible {
+    outline-color: transparent;
+  }
+
   @keyframes fade-in {
     from {
       opacity: 0;
