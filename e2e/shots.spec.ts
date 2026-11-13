@@ -223,7 +223,7 @@ for (const theme of ['paper', 'ink'] as const) {
           width: r.width, left: r.left, top: r.top, bottomGap: innerHeight - r.bottom,
           padding: cs.padding, border: `${cs.borderTopWidth} ${cs.borderTopStyle} ${cs.borderTopColor}`,
           background: cs.backgroundColor,
-          cellWithSublabel: cell('.segmented.tall .cell'), cellPlain: cell('.segmented:not(.tall) .cell'),
+          cell: cell('.segmented .cell'),
           sectionLabel: { fontSize: hs.fontSize, fontFamily: hs.fontFamily, letterSpacing: hs.letterSpacing, color: hs.color, above: hr.top - prev.bottom, below: next.top - hr.bottom },
           controlText: getComputedStyle(el.querySelector('.cell .control-text')!).fontSize,
           sublabel: getComputedStyle(el.querySelector('.cell .sublabel')!).fontSize,

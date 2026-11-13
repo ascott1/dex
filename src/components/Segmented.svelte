@@ -21,7 +21,6 @@
   let buttons: HTMLButtonElement[] = $state([]);
 
   const selected = $derived(options.findIndex((o) => o.value === value));
-  const tall = $derived(options.some((o) => o.sublabel));
 
   function select(i: number, focus = false) {
     const option = options[i];
@@ -60,7 +59,7 @@
 
 <!-- The radios are the tab stop (roving tabindex), not the group. -->
 <!-- svelte-ignore a11y_interactive_supports_focus -->
-<div class="segmented" class:tall role="radiogroup" aria-label={label} {onkeydown}>
+<div class="segmented" role="radiogroup" aria-label={label} {onkeydown}>
   {#each options as option, i (i)}
     <button
       bind:this={buttons[i]}
@@ -87,8 +86,9 @@
     grid-auto-columns: minmax(0, 1fr);
   }
 
-  /* 30px tall, 41px with a sublabel (§8), borders included. Neighbouring
-     cells share one border: each cell after the first overlaps the last by 1px. */
+  /* Every cell is 41px tall (§8), borders included, so the controls in a sheet
+     line up as one family. Neighbouring cells share one border: each cell
+     after the first overlaps the last by 1px. */
   .cell {
     appearance: none;
     position: relative;
@@ -98,7 +98,7 @@
     align-items: flex-start;
     gap: 5px;
     min-width: 0;
-    height: 30px;
+    height: 41px;
     margin: 0;
     padding: 0 8px;
     border: 1px solid var(--line);
@@ -108,10 +108,6 @@
     transition:
       background-color var(--t-fast) var(--ease),
       border-color var(--t-fast) var(--ease);
-  }
-
-  .tall .cell {
-    height: 41px;
   }
 
   .cell + .cell {

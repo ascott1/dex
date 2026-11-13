@@ -51,10 +51,9 @@
     return (b === undefined ? keyLabel(a) : `${keyLabel(a)}–${keyLabel(b)}`).toLowerCase();
   }
 
-  const keyLines: string[] = KEY_HELP.map((line) =>
-    line
-      .map(([refs, word]) => `${refs.map(keyText).filter(Boolean).join(' ')} ${word}`)
-      .join(' · '),
+  // One string per item, so a line can only wrap between items.
+  const keyLines: string[][] = KEY_HELP.map((line) =>
+    line.map(([refs, word]) => `${refs.map(keyText).filter(Boolean).join(' ')} ${word}`),
   );
 </script>
 
@@ -190,8 +189,8 @@
         label="Theme"
         bind:value={() => baseTheme(), (v: ThemeName) => setDeckTheme(v)}
         options={[
-          { value: 'paper', label: 'Paper' },
-          { value: 'ink', label: 'Ink' },
+          { value: 'paper', label: 'Paper', sublabel: 'Light' },
+          { value: 'ink', label: 'Ink', sublabel: 'Dark' },
         ]}
       />
 
@@ -221,8 +220,8 @@
         label="Motion"
         bind:value={settings.motion}
         options={[
-          { value: true, label: 'On' },
-          { value: false, label: 'Off' },
+          { value: true, label: 'On', sublabel: 'Fades and reveals' },
+          { value: false, label: 'Off', sublabel: 'Instant' },
         ]}
       />
 
@@ -242,8 +241,8 @@
         label="Marks"
         bind:value={settings.marks}
         options={[
-          { value: true, label: 'Shown' },
-          { value: false, label: 'Hidden' },
+          { value: true, label: 'Shown', sublabel: 'Drawings and notes' },
+          { value: false, label: 'Hidden', sublabel: 'Kept, not shown' },
         ]}
       />
       <div class="buttons">
@@ -270,7 +269,9 @@
       <h3 class="label section">Keys</h3>
       <div class="keys help-text">
         {#each keyLines as line, i (i)}
-          <p>{line}</p>
+          <p>
+            {#each line as item, j (j)}<span class="item">{item}</span>{#if j < line.length - 1}<span class="dot" aria-hidden="true">{' · '}</span>{/if}{/each}
+          </p>
         {/each}
       </div>
 
@@ -391,6 +392,11 @@
 
   .keys p {
     margin: 0;
+  }
+
+  /* A key and its word stay together; lines break only at the dots. */
+  .keys .item {
+    white-space: nowrap;
   }
 
   /* Info rows: a 96px Label column and a Control-text value, bordered. */

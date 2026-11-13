@@ -80,7 +80,8 @@ test.describe('settings sheet', () => {
         padding: cs.padding, border: `${cs.borderTopWidth} ${cs.borderTopStyle}`, borderColor: cs.borderTopColor,
         scrolls: el.scrollHeight > el.clientHeight && cs.overflowY === 'auto',
         labelSize: label.fontSize, labelFamily: label.fontFamily, labelTransform: label.textTransform,
-        tall: heights('.segmented.tall .cell'), short: heights('.segmented:not(.tall) .cell'),
+        cells: heights('.segmented .cell'),
+        cellsWithoutSublabel: el.querySelectorAll('.segmented .cell:not(:has(.sublabel))').length,
         radii, shadows,
       };
     });
@@ -97,8 +98,9 @@ test.describe('settings sheet', () => {
     expect(m.labelSize).toBe('10px');
     expect(m.labelFamily).toContain('DM Mono');
     expect(m.labelTransform).toBe('uppercase');
-    expect(new Set(m.tall)).toEqual(new Set([41]));
-    expect(new Set(m.short)).toEqual(new Set([30]));
+    // Every control is the same height and every cell has a sublabel.
+    expect(new Set(m.cells)).toEqual(new Set([41]));
+    expect(m.cellsWithoutSublabel).toBe(0);
     expect(m.radii).toBe(0);
     expect(m.shadows).toBe(0);
 

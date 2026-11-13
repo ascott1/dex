@@ -877,7 +877,7 @@ Content elements (all layouts):
 | Auto-hide | `chrome: 'auto'`: bars are visible and docked in a window (the stage sits between them); in fullscreen they fade out after 2.5s without pointer movement and return on movement. `'always'` and `'hidden'` do what they say. Fading is opacity only. |
 | Sheet (settings) | Centered, 432px wide, 40px from the top and bottom of the window (max height `100vh - 80px`), scrolls inside. 1px solid `--ink` border, `--bg` background, 18px padding. Backdrop is `--scrim`. Header row: `SETTINGS` Label left, `CLOSE` text button right. |
 | Section label | A Label with 28px above and 10px below. |
-| Segmented control | Equal-width cells in a row, 1px `--line` borders (shared between cells), 8px side padding. Each cell has Control text and an optional Sublabel under it; cells are 41px tall with a sublabel and 30px without. Selected: `--fill` background, `--on-fill` text, sublabel at 60% opacity. |
+| Segmented control | Equal-width cells in a row, 1px `--line` borders (shared between cells), 8px side padding. Each cell has Control text and a Sublabel under it, and every cell is 41px tall, so the controls in a sheet read as one family. (The reference leaves some controls without sublabels, at 30px; the owner asked for them all to match.) Selected: `--fill` background, `--on-fill` text, sublabel at 60% opacity. |
 | Button | A Label in `--ink` with 8×12 padding and a 1px `--line` border. Hover: `--ink` border. Pressed: `--fill` background, `--on-fill` text. |
 | Info rows | Bordered rows with a 96px Label column and a Control-text value, as in the reference's Directory / Media / Markdown block. |
 | Focus | `:focus-visible { outline: 1px solid var(--ink); outline-offset: 2px }` everywhere. |
@@ -1039,12 +1039,12 @@ Tasks:
 
    | Section | Control |
    |---|---|
-   | THEME | Paper · Ink |
+   | THEME | Paper (light) · Ink (dark) |
    | TEXT | Quiet (screen share; the reference's size) · Regular (most rooms) · Loud (big rooms) |
    | BUILDS | On (step through lists) · Off (show everything) |
-   | MOTION | On · Off |
+   | MOTION | On (fades and reveals) · Off (instant) |
    | CHROME | Auto (hides in fullscreen) · Always · Hidden |
-   | MARKS | Shown · Hidden, then buttons `CLEAR THIS SLIDE` and `CLEAR ALL` (wired in Phase 6) |
+   | MARKS | Shown (drawings and notes) · Hidden (kept, not shown), then buttons `CLEAR THIS SLIDE` and `CLEAR ALL` (wired in Phase 6) |
    | FOLLOW EDITS | On (jump to the slide you are editing) · Off — only rendered when `import.meta.env.DEV` |
    | KEYS | The cheat sheet generated from the command registry, as Help text: `← → move · space build · g slides · …` |
    | DECK | Info rows: deck (a `<select>` of all decks; changing it navigates), slides, source path. Buttons `PRESENTER` and `PRINT / PDF` (wired in Phases 8 and 9). |
@@ -1278,6 +1278,7 @@ Executors: add a line here whenever the implementation differs from this plan. F
 - Phase 4 — chrome over a `bg` image: `.app` gets `data-over-image` (set in `App.svelte`) and `chrome.css` steps the labels up one level as decided. On the demo's light plate under the 0.55 scrim, the counter and deck title read, but the idle `← → NOTE DRAW` (now `--ink-3`) are still close to invisible. Left as decided; a second step, or a `--bg` strip under the bars only on image slides, would fix it.
 - Phase 4 — `App.svelte` sets `data-dev` on `.app` in dev, for the `OVERFLOW` label (13px fixed, a dev marker, not slide text).
 - Phase 4 — Playwright has two projects: `chromium` (smoke, ignores `shots.spec.ts`) and `shots` (only `shots.spec.ts`); `pnpm test:e2e` runs `--project=chromium`, `pnpm shots` runs `--project=shots`. `pnpm shots` also writes `docs/shots/report.json` (layout, density, overflow per shot) and `docs/shots/measure.json` (the §8 reference measurements at Quiet, taken from the DOM), five sample slides at Quiet and Loud, and the title, bullets, columns and both split slides on 4:3 and 16:10 stages at Regular and Quiet (temporary `decks/zz-e2e-aspect-*` decks, removed afterwards). `docs/shots/` is gitignored.
+- Phase 5 (owner feedback) — the segmented controls came in two heights, because Theme, Motion and Marks had no sublabels. Every control now has sublabels and every cell is 41px tall; `Segmented` no longer has a short variant. The key list wraps only between items. §8 and the Phase 5 table are updated.
 - Phase 5 (follow-up by the planner) — review found no defects. Decisions and notes recorded for later phases: the three scopes of clearing marks (Phase 6); replacing the `editing` Esc layer (Phase 6); blackout's "any key" and overlay keys on the presenter route (Phase 8); `PRINT / PDF` opening a new tab (Phase 9); and the Esc chain in §7.
 - Phase 5 — `Esc` chain: `src/lib/escape.ts` holds ranked layers (`ESCAPE_RANK`: goto 0, warnings 5, settings 10, overview 20, source 30, editing 40, tool 50, zoom 60, blackout 70) and `onEscape(id, rank, close)`; `escape()` asks them in order and stops at the first that closes something. `commands.ts` `escape()` now delegates to it. Defaults for every layer are registered from `ui` state (the Phase 3 behaviour); Phases 6–8 replace their layer by id (`onEscape('editing', ESCAPE_RANK.editing, …)`) when closing needs more than clearing state. Go-to digits are cancelled before anything else closes.
 - Phase 5 — `keys.ts`: a focused button or link keeps `Enter` and `Space` unless a command with a `when` claims the key. Found by a test: in the overview focus sits on a thumbnail button, so `8`, `Enter` pressed the button instead of going to slide 8. Only `goto` claims `Enter` (while digits are typed), so nothing else changes; a later phase that gives `next` a `when` would let it take `Space` from focused buttons.
