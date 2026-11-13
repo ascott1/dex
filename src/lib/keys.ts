@@ -49,10 +49,12 @@ export function handleKeydown(event: KeyboardEvent): void {
   // Ground rule 9: inputs keep their keys, except Escape.
   if (event.key !== 'Escape' && isEditable(event.target)) return;
   const key = normalizeKey(event);
-  // A focused button or link activates itself on Enter and Space.
-  if ((key === 'Enter' || key === 'Space') && isActivatable(event.target)) return;
+  // A focused button or link activates itself on Enter and Space, unless a
+  // command claims the key through its `when` (go-to: digits typed, then Enter).
+  const activatable = (key === 'Enter' || key === 'Space') && isActivatable(event.target);
   for (const command of commands) {
     if (!command.keys.includes(key)) continue;
+    if (activatable && !command.when) continue;
     if (command.when && !command.when(event)) continue;
     event.preventDefault();
     if (event.repeat && !command.repeat) return;

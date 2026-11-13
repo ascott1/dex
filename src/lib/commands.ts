@@ -8,7 +8,7 @@
 
 import * as navigation from '../state/nav.svelte';
 import { baseTheme, setDeckTheme, settings } from '../state/settings.svelte';
-import { resetCamera, ui } from '../state/ui.svelte';
+import { escape as escapeTopmost } from './escape';
 
 export interface Command {
   id: string;
@@ -46,14 +46,9 @@ export function toggleChrome(): void {
   }
 }
 
-/** Close the topmost thing (§7): settings, overview, source, note editing, tool, zoom, blackout. */
+/** Close the topmost thing (§7). The order lives in lib/escape.ts, which later phases join. */
 export function escape(): void {
-  if (ui.warnings) ui.warnings = false;
-  else if (ui.overlay) ui.overlay = null;
-  else if (ui.editing) ui.editing = null;
-  else if (ui.tool) ui.tool = null;
-  else if (ui.camera.k !== 1 || ui.camera.x !== 0 || ui.camera.y !== 0) resetCamera();
-  else if (ui.blackout) ui.blackout = false;
+  escapeTopmost();
 }
 
 const DIGITS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];

@@ -18,3 +18,10 @@ export async function loadMarks(_slug: string): Promise<void> {}
 
 /** Phase 6. */
 export function saveMarks(): void {}
+
+/**
+ * Phase 6: remove every mark on every slide of the open deck (undoable). The
+ * settings sheet's `CLEAR ALL` button calls this after its `CONFIRM` click,
+ * which Phase 6 also adds. Added as a stub in Phase 5.
+ */
+export function clearAllMarks(): void {}

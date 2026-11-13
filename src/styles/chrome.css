@@ -76,6 +76,43 @@ body {
   color: var(--ink);
 }
 
+/* A bordered button (§8 "Button"): a Label in --ink, 8×12 padding, 1px --line
+   border; hover --ink border; pressed filled. Disabled drops to --ink-4. */
+.button {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    border-color var(--t-fast) var(--ease),
+    background-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease);
+}
+
+.button:hover {
+  border-color: var(--ink);
+}
+
+.button:active,
+.button[aria-pressed='true'] {
+  border-color: var(--fill);
+  background: var(--fill);
+  color: var(--on-fill);
+}
+
+.button:disabled {
+  border-color: var(--line);
+  background: none;
+  color: var(--ink-4);
+  cursor: default;
+}
+
 /* 28×28 square icon button with a 1px --line border (§8 "Top bar"). */
 .icon-btn {
   appearance: none;

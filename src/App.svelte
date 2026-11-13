@@ -2,6 +2,7 @@
   // The §7 DOM skeleton, the hash router, and the window-level listeners.
   import { untrack } from 'svelte';
   import { handleKeydown } from './lib/keys';
+  import './lib/overlays';
   import { formatRoute, onHashChange, parseHash, replaceHash, type Route } from './lib/router';
   import { deck, loadDeck, loadIndex } from './state/deck.svelte';
   import { goto, nav } from './state/nav.svelte';

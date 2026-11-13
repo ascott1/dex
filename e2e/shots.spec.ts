@@ -185,3 +185,80 @@ test('reference measurements at Quiet', async ({ page }) => {
   }
   writeFileSync(join(OUT, 'measure.json'), JSON.stringify(out, null, 2) + '\n');
 });
+
+// Phase 5 chrome: the settings sheet (at the reference's 1366×817 viewport, to
+// compare with docs/reference/maeda-settings.png), the overview, the source
+// view, and the go-to label, in both themes. Also docs/shots/chrome/sheet.json,
+// the sheet's sizes from the DOM against §8.
+for (const theme of ['paper', 'ink'] as const) {
+  test(`chrome overlays, ${theme}`, async ({ page }) => {
+    const dir = join(OUT, 'chrome');
+    mkdirSync(dir, { recursive: true });
+    await page.setViewportSize({ width: 1366, height: 817 });
+    await page.addInitScript((theme) => {
+      localStorage.setItem('dex:settings', JSON.stringify({ motion: false }));
+      localStorage.setItem('dex:theme:demo', theme);
+    }, theme);
+    await page.goto('/#/demo/1');
+    await expect(page.locator('.slides > .slide.current')).toHaveCount(1);
+    await page.evaluate(() => document.fonts.ready);
+
+    await page.keyboard.press('s');
+    const sheet = page.locator('.sheet');
+    await expect(sheet).toBeVisible();
+    await expect(sheet.locator('select option')).not.toHaveCount(0);
+    await page.screenshot({ path: join(dir, `sheet-${theme}-top.png`) });
+    if (theme === 'paper') {
+      const sizes = await sheet.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        const cs = getComputedStyle(el);
+        const h3 = el.querySelector('h3')!;
+        const hs = getComputedStyle(h3);
+        const cell = (q: string) => el.querySelector(q)!.getBoundingClientRect().height;
+        const prev = h3.previousElementSibling!.getBoundingClientRect();
+        const next = h3.nextElementSibling!.getBoundingClientRect();
+        const hr = h3.getBoundingClientRect();
+        return {
+          viewport: [innerWidth, innerHeight],
+          width: r.width, left: r.left, top: r.top, bottomGap: innerHeight - r.bottom,
+          padding: cs.padding, border: `${cs.borderTopWidth} ${cs.borderTopStyle} ${cs.borderTopColor}`,
+          background: cs.backgroundColor,
+          cellWithSublabel: cell('.segmented.tall .cell'), cellPlain: cell('.segmented:not(.tall) .cell'),
+          sectionLabel: { fontSize: hs.fontSize, fontFamily: hs.fontFamily, letterSpacing: hs.letterSpacing, color: hs.color, above: hr.top - prev.bottom, below: next.top - hr.bottom },
+          controlText: getComputedStyle(el.querySelector('.cell .control-text')!).fontSize,
+          sublabel: getComputedStyle(el.querySelector('.cell .sublabel')!).fontSize,
+        };
+      });
+      writeFileSync(join(dir, 'sheet.json'), JSON.stringify(sizes, null, 2) + '\n');
+    }
+    await sheet.evaluate((el) => (el.scrollTop = el.scrollHeight));
+    await page.screenshot({ path: join(dir, `sheet-${theme}-bottom.png`) });
+    await page.keyboard.press('Escape');
+
+    await page.setViewportSize({ width: 1600, height: 900 });
+    await page.evaluate(() => (location.hash = '#/demo/20'));
+    await expect(page.locator('.bottombar .counter')).toHaveText('20 / 23');
+    await page.keyboard.press('g');
+    await expect(page.locator('.overview .thumb')).toHaveCount(23);
+    await page.evaluate(async () => {
+      await Promise.all([...document.querySelectorAll<HTMLImageElement>('.overview img')].map((i) => i.decode().catch(() => null)));
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    });
+    await page.screenshot({ path: join(dir, `overview-${theme}.png`) });
+    await page.keyboard.press('Escape');
+
+    await page.evaluate(() => (location.hash = '#/demo/15'));
+    await expect(page.locator('.bottombar .counter')).toHaveText('15 / 23');
+    await page.keyboard.press('m');
+    await expect(page.locator('.source')).toBeVisible();
+    await page.screenshot({ path: join(dir, `source-${theme}.png`) });
+    await page.keyboard.press('Escape');
+
+    await page.keyboard.press('1');
+    await page.keyboard.press('2');
+    await expect(page.locator('.bottombar .goto')).toHaveText('Go to 12');
+    await page.locator('.bottombar').screenshot({ path: join(dir, `goto-${theme}.png`) });
+    await page.screenshot({ path: join(dir, `goto-${theme}-page.png`) });
+    await page.keyboard.press('Escape');
+  });
+}

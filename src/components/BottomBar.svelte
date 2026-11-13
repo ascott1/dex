@@ -31,6 +31,9 @@
     <button class="label label-btn arrow" type="button" aria-label="Previous" onpointerdown={keepFocus} onclick={prev}>←</button>
     <button class="label label-btn arrow" type="button" aria-label="Next" onpointerdown={keepFocus} onclick={next}>→</button>
     <span class="label counter" aria-label="Slide {nav.index + 1} of {count}">{counter}</span>
+    {#if ui.goto}
+      <span class="label goto" role="status">Go to {ui.goto}</span>
+    {/if}
   </div>
 
   <div class="right">
@@ -116,6 +119,12 @@
 
   .counter {
     margin-left: 13px;
+  }
+
+  /* Digits typed for go-to-slide (lib/overlays.ts). */
+  .goto {
+    margin-left: 16px;
+    color: var(--ink);
   }
 
   .warn {
