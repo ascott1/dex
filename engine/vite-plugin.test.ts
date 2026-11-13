@@ -218,9 +218,17 @@ describe('dex plugin in dev', () => {
     // Give the watcher time to see the write; it must not reload the page or send dex events.
     await new Promise((r) => setTimeout(r, 600));
     expect(sent.slice(before)).toEqual([]);
-    // The marks file is then served as a plain static file.
+    // The marks file is then served, uncached.
     const back = await fetch(url('/decks/alpha/marks.json'));
+    expect(back.headers.get('cache-control')).toBe('no-store');
     expect(await back.json()).toEqual(marks);
+  });
+
+  it('answers 404 for a deck that has no marks.json yet, not the SPA page', async () => {
+    const res = await fetch(url('/decks/beta/marks.json'));
+    expect(res.status).toBe(404);
+    expect(res.headers.get('content-type')).toContain('application/json');
+    expect((await fetch(url('/decks/no-such/marks.json'))).status).toBe(404);
   });
 
   it('rejects unsafe slugs with 400 and writes nothing', async () => {

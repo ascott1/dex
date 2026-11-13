@@ -282,6 +282,26 @@ export function dex(options: DexOptions = {}): Plugin {
           return;
         }
 
+        // marks.json is served here rather than by Vite's static serving, so a
+        // deck without one gets the 404 the server contract promises (Vite's
+        // SPA fallback would answer 200 with index.html) and it is never cached.
+        const mm = /^\/decks\/([^/]+)\/marks\.json$/.exec(pathname);
+        if (mm) {
+          const slug = mm[1]!;
+          const file = path.join(dir, slug, 'marks.json');
+          if (!SLUG_RE.test(slug) || !existsSync(file)) {
+            sendJson(res, 404, { error: 'no marks' });
+            return;
+          }
+          void readFile(file).then((body) => {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.setHeader('Cache-Control', 'no-store');
+            res.end(req.method === 'HEAD' ? undefined : body);
+          }, next);
+          return;
+        }
+
         next();
       });
 

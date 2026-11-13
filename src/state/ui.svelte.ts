@@ -14,6 +14,7 @@ export const ui = $state({
   // Additions beyond the §7 list, each owned by the phase named:
   warnings: false,                                   // Phase 3: compile-warning list open
   editing: null as string | null,                    // Phase 6: id of the sticky note being edited
+  selected: null as string | null,                   // Phase 6: id of the selected sticky note
   goto: '',                                          // Phase 5: digits typed for go-to-slide
 });
 

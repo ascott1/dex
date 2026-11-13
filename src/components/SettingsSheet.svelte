@@ -33,8 +33,11 @@
       [[['laser', 0]], 'laser'],
       [[['marks', 0]], 'marks'],
       [[['clear', 0]], 'clear'],
+    ],
+    [
       [[['undo', 0]], 'undo'],
       [[['redo', 0]], 'redo'],
+      [[['penSmaller', 0], ['penLarger', 0]], 'pen size'],
     ],
     [
       [[['zoom', 0]], 'zoom'],
@@ -64,7 +67,7 @@
   import { runCommand } from '../lib/commands';
   import { formatRoute } from '../lib/router';
   import { deck, loadIndex } from '../state/deck.svelte';
-  import { clearAllMarks, marks } from '../state/marks.svelte';
+  import { clearAllMarks, clearSlideMarks, hasAnyMarks, hasMarks } from '../state/marks.svelte';
   import { nav } from '../state/nav.svelte';
   import { baseTheme, setDeckTheme, settings } from '../state/settings.svelte';
   import { ui } from '../state/ui.svelte';
@@ -84,14 +87,23 @@
     return list;
   });
 
-  // Phase 6 fills `marks`; until then there is nothing to clear.
-  const slideHasMarks = $derived.by(() => {
-    const m = slideId ? marks.data.slides[slideId] : undefined;
-    return !!m && (m.strokes.length > 0 || m.notes.length > 0);
+  const slideHasMarks = $derived(hasMarks(slideId));
+  const deckHasMarks = $derived(hasAnyMarks());
+
+  // CLEAR ALL asks once: the first click turns it into CONFIRM, the second clears.
+  let confirming = $state(false);
+  $effect(() => {
+    if (!open || !deckHasMarks) confirming = false;
   });
-  const deckHasMarks = $derived(
-    Object.values(marks.data.slides).some((m) => m.strokes.length > 0 || m.notes.length > 0),
-  );
+
+  function clearAll() {
+    if (!confirming) {
+      confirming = true;
+      return;
+    }
+    confirming = false;
+    clearAllMarks();
+  }
 
   function close() {
     ui.overlay = null;
@@ -246,11 +258,13 @@
         ]}
       />
       <div class="buttons">
-        <button class="label button" type="button" disabled={!slideHasMarks} onclick={() => runCommand('clear')}>
+        <button class="label button" type="button" disabled={!slideHasMarks} onclick={() => clearSlideMarks(slideId)}>
           Clear this slide
         </button>
-        <button class="label button" type="button" disabled={!deckHasMarks} onclick={clearAllMarks}>
-          Clear all
+        <button class="label button" class:confirm={confirming} type="button" disabled={!deckHasMarks}
+          aria-label={confirming ? 'Confirm: clear all marks' : 'Clear all'}
+          onblur={() => (confirming = false)} onclick={clearAll}>
+          {confirming ? 'Confirm' : 'Clear all'}
         </button>
       </div>
 
@@ -383,6 +397,13 @@
     flex-wrap: wrap;
     gap: 8px;
     margin-top: 10px;
+  }
+
+  /* The second click of CLEAR ALL: filled, like a pressed button. */
+  .button.confirm {
+    border-color: var(--fill);
+    background: var(--fill);
+    color: var(--on-fill);
   }
 
   .keys {

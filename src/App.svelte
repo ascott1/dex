@@ -3,9 +3,11 @@
   import { untrack } from 'svelte';
   import { handleKeydown } from './lib/keys';
   import './lib/overlays';
+  import './lib/tools.svelte';
   import { formatRoute, onHashChange, parseHash, replaceHash, type Route } from './lib/router';
   import { deck, loadDeck, loadIndex } from './state/deck.svelte';
   import { goto, nav } from './state/nav.svelte';
+  import { marks } from './state/marks.svelte';
   import { settings, slideTheme } from './state/settings.svelte';
   import { ui } from './state/ui.svelte';
   import Blackout from './components/Blackout.svelte';
@@ -109,7 +111,7 @@
 
   // Dev-only handle for the end-to-end tests and for poking at state in the console.
   if (import.meta.env.DEV) {
-    Object.assign(window, { __dex: { deck, nav, settings, ui } });
+    Object.assign(window, { __dex: { deck, nav, settings, ui, marks } });
   }
 </script>
 

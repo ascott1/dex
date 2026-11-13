@@ -6,6 +6,7 @@
   import { untrack } from 'svelte';
   import { stageSize } from '../lib/stage';
   import { deck } from '../state/deck.svelte';
+  import { hasMarks } from '../state/marks.svelte';
   import { goto, nav } from '../state/nav.svelte';
   import { ui } from '../state/ui.svelte';
   import SlideView from './SlideView.svelte';
@@ -137,6 +138,7 @@
           </div>
           <div class="caption">
             <span class="label num">{pad(i + 1)}</span>
+            {#if hasMarks(slide.id)}<span class="has-marks" role="img" title="Has marks" aria-label="Has marks"></span>{/if}
             <span class="label name">{slide.title ?? ''}</span>
             {#if slide.options.skip}<span class="label tag">Skip</span>{/if}
           </div>
@@ -267,6 +269,16 @@
 
   .num {
     flex: none;
+  }
+
+  /* A slide with drawings or notes: a small solid square beside its number. */
+  .has-marks {
+    flex: none;
+    align-self: center;
+    width: 6px;
+    height: 6px;
+    margin-left: -2px;
+    background: var(--ink);
   }
 
   .current .num,

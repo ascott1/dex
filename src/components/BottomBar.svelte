@@ -3,6 +3,7 @@
   import { deck } from '../state/deck.svelte';
   import { goto, nav, next, prev } from '../state/nav.svelte';
   import { resetCamera, ui } from '../state/ui.svelte';
+  import { armNote } from '../lib/tools.svelte';
   import DrawBar from './DrawBar.svelte';
 
   const count = $derived(deck.current?.slides.length ?? 0);
@@ -49,7 +50,9 @@
       {#if ui.camera.k > 1}
         <button class="label label-btn zoom" type="button" title="Reset zoom" onpointerdown={keepFocus} onclick={resetCamera}>{zoom}%</button>
       {/if}
-      <button class="label label-btn" type="button" onpointerdown={keepFocus} onclick={() => runCommand('note')}>Note</button>
+      <button class="label label-btn" class:armed={ui.tool === 'note'} type="button" aria-pressed={ui.tool === 'note'}
+        title="Click on the slide to place a note (n puts one at the pointer)"
+        onpointerdown={keepFocus} onclick={armNote}>Note</button>
       <button class="label label-btn" type="button" onpointerdown={keepFocus} onclick={() => runCommand('draw')}>Draw</button>
     {/if}
   </div>
@@ -129,6 +132,11 @@
 
   .warn {
     color: var(--red);
+  }
+
+  /* NOTE armed: the next click on the stage places a note. */
+  .armed {
+    color: var(--ink);
   }
 
   .warn:hover {

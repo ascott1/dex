@@ -82,6 +82,11 @@ export const commands: Command[] = [
   { id: 'clear', title: "Clear this slide's drawings", keys: ['c'], phase: 6, run: noop },
   { id: 'undo', title: 'Undo marks', keys: ['Mod+z'], phase: 6, run: noop },
   { id: 'redo', title: 'Redo marks', keys: ['Shift+Mod+z'], phase: 6, run: noop },
+  { id: 'penSmaller', title: 'Smaller pen', keys: ['['], phase: 6, run: noop },
+  { id: 'penLarger', title: 'Larger pen', keys: [']'], phase: 6, run: noop },
+  // Only while a sticky note is selected (their `when`); Enter after go-to's.
+  { id: 'noteDelete', title: 'Delete the selected note', keys: ['Delete', 'Backspace'], phase: 6, run: noop, when: () => false },
+  { id: 'noteEdit', title: 'Edit the selected note', keys: ['Enter'], phase: 6, run: noop, when: () => false },
 
   // Phase 7
   { id: 'zoom', title: 'Zoom toggle', keys: ['z'], phase: 7, run: noop },
