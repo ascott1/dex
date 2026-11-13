@@ -11,6 +11,7 @@
   --note-pink: #ffc4d0;
   --note-blue: #bfe0ff;
   --note-ink: #0f1413;
+  --blackout: #000;        /* Phase 8: the blackout cover, in both themes */
 }
 
 [data-theme='paper'] {

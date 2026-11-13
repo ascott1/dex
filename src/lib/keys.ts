@@ -2,6 +2,7 @@
 // list them as plain strings: `ArrowRight`, `Space`, `Shift+Space`, `t`, `Mod+z`,
 // `Shift+Mod+z`, `+`. `Mod` is ⌘ on macOS and Ctrl elsewhere (either is accepted).
 
+import { ui } from '../state/ui.svelte';
 import { commands } from './commands';
 
 export function normalizeKey(event: KeyboardEvent): string {
@@ -44,8 +45,20 @@ function isActivatable(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && target.closest('button, a[href], summary, [role="button"]') !== null;
 }
 
+const MODIFIERS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Fn', 'OS']);
+
 export function handleKeydown(event: KeyboardEvent): void {
   if (event.defaultPrevented || event.isComposing) return;
+  // Blackout (Phase 8): the next key clears it and does nothing else, so a
+  // digit does not start a go-to and Esc does not close other layers first.
+  // A modifier on its own, a held key, and browser shortcuts (⌘/Ctrl + key)
+  // leave it on.
+  if (ui.blackout) {
+    if (MODIFIERS.has(event.key) || event.metaKey || event.ctrlKey) return;
+    event.preventDefault();
+    if (!event.repeat) ui.blackout = false;
+    return;
+  }
   // Ground rule 9: inputs keep their keys, except Escape.
   if (event.key !== 'Escape' && isEditable(event.target)) return;
   const key = normalizeKey(event);

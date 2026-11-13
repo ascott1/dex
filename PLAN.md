@@ -28,7 +28,7 @@ tick the phase in §0, record any deviation from the plan in §11, and commit.
 | 5 | Settings sheet, overview, source view | M | 3 | Sonnet | [x] |
 | 6 | Marks: draw, sticky notes, laser, persistence | L | 3 | Sonnet | [x] |
 | 7 | Zoom and pan | S | 3 | Sonnet | [x] |
-| 8 | Presenter view, speaker notes, timer, blackout | M | 3 | Sonnet | [ ] |
+| 8 | Presenter view, speaker notes, timer, blackout | M | 3 | Sonnet | [x] |
 | 9 | Print/PDF and static export | S | 4 | Haiku | [ ] |
 | 10 | QA, polish, README | M | all | Sonnet, then a human or stronger-model design review | [ ] |
 
@@ -439,13 +439,20 @@ export const DEFAULT_SETTINGS: Settings = {
   marks: true, followEdits: true, pen: { tool: 'pen', color: 'ink', size: 6 },
 };
 
-// BroadcastChannel messages between windows of the same deck (Phase 8)
+// BroadcastChannel messages between windows of the same deck (Phase 8).
+// `nav`, `theme` and `blackout` are last-writer-wins: a window applies one only
+// when its stamp is newer than the stamp of the value it holds (see SyncStamp).
 export type SyncMessage =
   | { type: 'hello' }
-  | { type: 'nav'; index: number; step: number }
+  | { type: 'nav'; index: number; step: number; stamp: SyncStamp }
   | { type: 'marks'; slideId: string; marks: SlideMarks }
-  | { type: 'theme'; theme: ThemeName }
-  | { type: 'blackout'; on: boolean };
+  | { type: 'theme'; theme: ThemeName; stamp: SyncStamp }
+  | { type: 'blackout'; on: boolean; stamp: SyncStamp };
+
+// Orders changes made in different windows so they all settle on the same value.
+// `seq` is a Lamport clock: higher wins. On a tie the older window (smaller
+// `origin`, its `performance.timeOrigin`) wins, then the smaller `id`.
+export interface SyncStamp { seq: number; origin: number; id: string }
 
 // Custom HMR events the dev server sends (dev only; see §7 "Server contract").
 export interface DexUpdateEvent { slug: string }                                      // `dex:update`
@@ -750,6 +757,7 @@ The stage is 1600 wide where the reference viewport is 1366, so reference sizes 
   --note-pink: #ffc4d0;
   --note-blue: #bfe0ff;
   --note-ink: #0f1413;
+  --blackout: #000;        /* Phase 8: the blackout cover, in both themes */
 }
 
 [data-theme='paper'] {
@@ -1316,3 +1324,12 @@ Executors: add a line here whenever the implementation differs from this plan. F
 - Phase 7 — drag-to-pan: armed while `k > 1`, no tool is on, and no overlay is open (`.viewport[data-pan="ready"]`: grab cursor, `user-select: none`, `touch-action: none`; `"active"` while dragging: grabbing). Listeners are native on `.viewport`; sticky notes, buttons, form fields and `video[controls]` are excluded by `closest()`, because Svelte delegates `onpointerdown` to the root, so a note's `stopPropagation()` runs after a native `.viewport` listener has already seen the press. A press becomes a pan only after 3px of movement, so a click on a link still follows it; a press that pans swallows the click its release would make. Native image drags are prevented while armed.
 - Phase 7 — verified, no change needed: drawing and note placement go through `clientToStage`, whose CTM includes the camera, so marks land under the pointer at any zoom (tested at 200% on a corner: the stroke spans the drag on screen and its SVG bounding box is at the expected slide coordinates); the laser, positioned in `.stage` outside `.camera`, stays under the pointer when zoomed (tested). Full-bleed layers zoom with the slide and fill the letterbox; the clamp keeps the stage rectangle covered, as specified.
 - Phase 7 — tests: `e2e/zoom.spec.ts` (11 tests, part of `pnpm test:e2e`) on a temporary deck `decks/zz-e2e-zoom`; one runs without reduced motion to check that key zooms ease over `--t-med`, wheel zooms do not, and a slide change cancels a running ease. Rough edges: Ctrl/⌘ + wheel with an overlay open still zooms the page (deliberately left to the browser); on the presenter route (Phase 8) the zoom commands would change `ui.camera` with no stage to show it, so Phase 8 should give them a `when` that is false there, as for the overlays.
+- Phase 8 — `SyncMessage` changed (§5 and `shared/types.ts`): `nav`, `theme` and `blackout` carry a `stamp: SyncStamp` (`{ seq, origin, id }`). Without an order, two windows that navigate within the same few milliseconds each apply the other's message and end on different slides (a test that runs three windows navigating at once fails every time without it). Each window keeps a Lamport clock (`src/lib/stamp.ts`, unit tested); it applies a message only when its stamp is newer than the stamp of the value it holds: higher `seq` wins, then the older window (`performance.timeOrigin`), then `id`. A window's untouched values carry `seq` 0, so a window that joins adopts the others' state, and between two untouched windows the older one wins.
+- Phase 8 — files: `src/state/sync.ts` is only the `BroadcastChannel` wrapper (`openSync(slug, onMessage)`, `broadcast`, `closeSync`). The wiring is in `src/lib/session.svelte.ts` (runes need a `.svelte.ts` module): it watches `nav`, `deckTheme.override` and `ui.blackout` with effects and broadcasts a value only when it differs from the last value the window knows, sent or received; applying a message records the value before changing state, so the effect finds nothing new and nothing echoes. Marks go out from `onMarksChange`, batched per slide to one message per animation frame (with a 100ms timer as well, since a hidden window gets no frames), and come in through `applyRemoteMarks`, which neither saves nor reports. `src/lib/presenter.ts` fills the `presenter` and `blackout` commands. `App.svelte` calls `startSync(slug)` after the route's slide is shown (so a joining window's own slide is settled before it asks), and `stopSync()` on the index and print routes; `window.__dex` gains `session`.
+- Phase 8 — `hello`: sent once the window's marks have loaded, so marks in the replies land on top of what was loaded rather than being replaced by it. Replies carry the slide and step, theme and blackout as planned, and also a `marks` message for every slide that has marks, so strokes made just before the presenter opened (not yet in `marks.json`, which saves after 500ms) still show. Not synced: the camera (as decided), tools, overlays, the laser, settings, go-to digits, the timer. Theme: only a local change of the per-deck override is broadcast; a frontmatter `theme` change reaches each window through live reload, and an incoming theme is written as an override only when it differs from what the window shows.
+- Phase 8 — known limit: two deck windows drawing on the same slide within one animation frame each replace that slide's marks with the other's snapshot, so one stroke can be lost. The presenter cannot draw, so this needs two audience windows; left as is.
+- Phase 8 — blackout: `--blackout: #000` added to the `:root` block of `tokens.css` (§8 updated), because the cover's colour must come from a token. The `blackout` command only turns it on; while it is on, `keys.ts` takes the next key before the editable-target check and the command lookup, clears blackout and does nothing else. A modifier on its own, a held key's repeats, and ⌘/Ctrl shortcuts leave it on (so ⌘-Tab to another app does not lift it). A click on the cover clears it. The presenter window never goes black: its current-slide frame shows the black the audience sees and a `BLACKOUT · ANY KEY RETURNS` Label button that clears it; a click elsewhere in the presenter does not (clicks belong to the timer). A window opened during a blackout starts blacked out.
+- Phase 8 — presenter route: besides the overlays, zoom and the marks tools (`draw`, `note`, `laser`, `marks`, `clear`, `undo`, `redo`, `penSmaller`, `penLarger`, `noteDelete`, `noteEdit`), `chrome` (`h`, which would change a stored setting with nothing to show) and `presenter` (`p`, which would re-open the presenter in itself) get a `when` that is false there; the wrapper keeps each command's own `when`. A later `implement()` of one of these ids would drop the guard. Go-to works in the presenter and shows `GO TO 12` beside the counter. The presenter's `<html>` takes the deck theme, not the current slide's, so the presenter does not flip on `invert` slides; each slide carries its own theme. Slides are rendered with `current={false}`, so autoplay videos do not play (with sound) in the presenter. The window title is `Presenter · <deck> · dex`.
+- Phase 8 — presenter layout: the `NEXT`/`END` Label sits under the next slide (with the next slide's title beside it), so the two frames' tops align; on the last slide the frame is empty with `END OF DECK` centred in `--ink-4`. A `NOTES` Label heads the notes. The next slide shows its marks too. The current frame is as wide as its column unless the window is too short, then as tall as fits. Below the frames at 1280×800 there is unused space on the left.
+- Phase 8 — timer: a click on an idle timer starts it; a click pauses and resumes; the click events of a double-click are ignored after the first (`detail > 1`), and the double-click resets to idle (`00:00:00` in `--ink-4`), which the next navigation starts again, so a double-click never leaves it paused. Paused is `--ink-3` with a `PAUSED` Label. A slide or step change starts an idle timer, including the one a presenter opened mid-talk makes when it adopts the talk's slide; the deck loading or reloading does not. Clicks on the timer do not take focus, so `Space` keeps moving the slides. The clock is `toLocaleTimeString` hours and minutes.
+- Phase 8 — tests: `e2e/presenter.spec.ts` (12 tests, part of `pnpm test:e2e`) on a temporary deck `decks/zz-e2e-presenter`, two or three pages in one context, with `BroadcastChannel.postMessage` counted to show windows stop sending once settled. The timer test uses Playwright's fake clock. `pnpm shots` writes `docs/shots/presenter/` (presenter at 1280×800 in Paper and Ink: notes and builds, blackout, last slide, no notes; the audience window in blackout).

@@ -262,3 +262,69 @@ for (const theme of ['paper', 'ink'] as const) {
     await page.keyboard.press('Escape');
   });
 }
+
+// Phase 8: the presenter window at 1280×800 (the size `p` opens), in both
+// themes: a slide with notes and builds, a slide without notes, and the last
+// slide; and the audience window in blackout. Into docs/shots/presenter/.
+for (const theme of ['paper', 'ink'] as const) {
+  test(`presenter window, ${theme}`, async ({ context, page }) => {
+    const dir = join(OUT, 'presenter');
+    mkdirSync(dir, { recursive: true });
+    const plain = 'zz-e2e-presenter-shots';
+    writeDeck(plain, '## A slide without notes\n\n+ First point\n+ Second point\n\n---\n\n## The last one\n\nNothing after this.');
+    await context.addInitScript(([theme, plain]) => {
+      localStorage.setItem('dex:settings', JSON.stringify({ motion: false }));
+      localStorage.setItem('dex:theme:demo', theme);
+      localStorage.setItem(`dex:theme:${plain}`, theme);
+    }, [theme, plain] as const);
+    const joined = (p: Page) =>
+      p.waitForFunction(() => (window as unknown as { __dex?: { session: { joined: boolean } } }).__dex?.session.joined === true);
+    const settle = async (p: Page) => {
+      await p.evaluate(async () => {
+        await document.fonts.ready;
+        await Promise.all([...document.querySelectorAll<HTMLImageElement>('img')].map((i) => i.decode().catch(() => null)));
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      });
+      await p.waitForTimeout(120);
+    };
+
+    // The audience window, on the bullets slide one step in.
+    await page.goto('/#/demo/4');
+    await expect(page.locator('.slides > .slide.current')).toHaveCount(1);
+    await joined(page);
+    await page.keyboard.press('ArrowRight');
+
+    const presenter = await context.newPage();
+    await presenter.setViewportSize({ width: 1280, height: 800 });
+    await presenter.goto('/#/demo/presenter');
+    await joined(presenter);
+    await expect(presenter.locator('[data-counter]')).toHaveText('Slide 04 / 23');
+    await page.keyboard.press('ArrowRight');   // starts the timer
+    await presenter.waitForTimeout(1100);
+    await settle(presenter);
+    await presenter.screenshot({ path: join(dir, `${theme}-notes-builds.png`) });
+
+    await page.keyboard.press('b');
+    await expect(page.locator('[data-blackout]')).toBeVisible();
+    await settle(presenter);
+    await presenter.screenshot({ path: join(dir, `${theme}-blackout.png`) });
+    if (theme === 'paper') await page.screenshot({ path: join(dir, 'audience-blackout.png') });
+    await page.keyboard.press('b');
+
+    await presenter.keyboard.press('End');
+    await expect(presenter.locator('[data-next-label]')).toHaveText('End');
+    await settle(presenter);
+    await presenter.screenshot({ path: join(dir, `${theme}-last.png`) });
+
+    await presenter.close();
+    await page.goto(`/#/${plain}/1`);
+    await joined(page);
+    const second = await context.newPage();
+    await second.setViewportSize({ width: 1280, height: 800 });
+    await second.goto(`/#/${plain}/presenter`);
+    await joined(second);
+    await expect(second.locator('[data-notes]')).toHaveText('No notes');
+    await settle(second);
+    await second.screenshot({ path: join(dir, `${theme}-no-notes.png`) });
+  });
+}

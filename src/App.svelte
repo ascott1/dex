@@ -4,11 +4,13 @@
   import { handleKeydown } from './lib/keys';
   import './lib/overlays';
   import './lib/tools.svelte';
+  import './lib/presenter';
+  import { session, startSync, stopSync } from './lib/session.svelte';
   import { formatRoute, onHashChange, parseHash, replaceHash, type Route } from './lib/router';
   import { deck, loadDeck, loadIndex } from './state/deck.svelte';
   import { goto, nav } from './state/nav.svelte';
   import { marks } from './state/marks.svelte';
-  import { settings, slideTheme } from './state/settings.svelte';
+  import { baseTheme, settings, slideTheme } from './state/settings.svelte';
   import { ui } from './state/ui.svelte';
   import Blackout from './components/Blackout.svelte';
   import BottomBar from './components/BottomBar.svelte';
@@ -36,6 +38,7 @@
 
   async function applyRoute(r: Route) {
     if (r.view === 'index') {
+      stopSync();
       await loadIndex();
       // Exactly one deck: go straight to it, without a history entry.
       if (route === r && deck.list.length === 1) {
@@ -47,10 +50,23 @@
     }
     if (deck.current?.slug === r.slug) {
       if (r.view === 'deck' && r.n !== null && r.n - 1 !== nav.index) goto(r.n - 1);
+      syncRoute(r);
       return;
     }
+    stopSync();
     const ok = await loadDeck(r.slug);
-    if (ok && route === r) goto(r.view === 'deck' && r.n !== null ? r.n - 1 : 0);
+    if (ok && route === r) {
+      goto(r.view === 'deck' && r.n !== null ? r.n - 1 : 0);
+      syncRoute(r);
+    }
+  }
+
+  // The deck and presenter windows stay in step (Phase 8). Started only once
+  // the route's slide is showing, so that slide is this window's own state
+  // when it asks the others for theirs.
+  function syncRoute(r: Route) {
+    if (r.view === 'deck' || r.view === 'presenter') startSync(r.slug);
+    else stopSync();
   }
 
   // The hash follows the current slide, without history entries (§7).
@@ -61,7 +77,10 @@
   });
 
   // Effective theme on <html>: the bars and the letterbox follow the slide (§7).
-  const theme = $derived(slideTheme(deck.current?.slides[nav.index]));
+  // The presenter window keeps the deck theme: its slides carry their own.
+  const theme = $derived(
+    route.view === 'presenter' ? baseTheme() : slideTheme(deck.current?.slides[nav.index]),
+  );
   // The chrome sits on a picture: its labels step up one level (§9 Phase 4, task 6).
   const overImage = $derived(deck.current?.slides[nav.index]?.attrs['data-bg'] === 'image');
   $effect(() => {
@@ -69,7 +88,8 @@
   });
 
   $effect(() => {
-    document.title = deck.current ? `${deck.current.meta.title} · dex` : 'dex';
+    const title = deck.current ? `${deck.current.meta.title} · dex` : 'dex';
+    document.title = route.view === 'presenter' ? `Presenter · ${title}` : title;
   });
 
   $effect(() => {
@@ -111,7 +131,7 @@
 
   // Dev-only handle for the end-to-end tests and for poking at state in the console.
   if (import.meta.env.DEV) {
-    Object.assign(window, { __dex: { deck, nav, settings, ui, marks } });
+    Object.assign(window, { __dex: { deck, nav, settings, ui, marks, session } });
   }
 </script>
 

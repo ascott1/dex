@@ -87,13 +87,20 @@ export const DEFAULT_SETTINGS: Settings = {
   marks: true, followEdits: true, pen: { tool: 'pen', color: 'ink', size: 6 },
 };
 
-// BroadcastChannel messages between windows of the same deck (Phase 8)
+// BroadcastChannel messages between windows of the same deck (Phase 8).
+// `nav`, `theme` and `blackout` are last-writer-wins: a window applies one only
+// when its stamp is newer than the stamp of the value it holds (see SyncStamp).
 export type SyncMessage =
   | { type: 'hello' }
-  | { type: 'nav'; index: number; step: number }
+  | { type: 'nav'; index: number; step: number; stamp: SyncStamp }
   | { type: 'marks'; slideId: string; marks: SlideMarks }
-  | { type: 'theme'; theme: ThemeName }
-  | { type: 'blackout'; on: boolean };
+  | { type: 'theme'; theme: ThemeName; stamp: SyncStamp }
+  | { type: 'blackout'; on: boolean; stamp: SyncStamp };
+
+// Orders changes made in different windows so they all settle on the same value.
+// `seq` is a Lamport clock: higher wins. On a tie the older window (smaller
+// `origin`, its `performance.timeOrigin`) wins, then the smaller `id`.
+export interface SyncStamp { seq: number; origin: number; id: string }
 
 // Custom HMR events the dev server sends (dev only; see §7 "Server contract").
 export interface DexUpdateEvent { slug: string }                                      // `dex:update`
