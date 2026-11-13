@@ -227,15 +227,18 @@ test.describe('settings sheet', () => {
     await expect(pre).toBeFocused();
   });
 
-  test('the later-phase buttons are there; PRINT / PDF opens the print route', async ({ page }) => {
+  test('the later-phase buttons are there; PRINT / PDF opens the print route in a new tab', async ({ page, context }) => {
     await open(page, '#/demo/3');
     await page.keyboard.press('s');
     // Nothing to clear until Phase 6 stores marks.
     await expect(sheet(page).getByRole('button', { name: 'Clear this slide' })).toBeDisabled();
     await expect(sheet(page).getByRole('button', { name: 'Clear all' })).toBeDisabled();
     await expect(sheet(page).getByRole('button', { name: 'Presenter' })).toBeEnabled();
+    const opened = context.waitForEvent('page');
     await sheet(page).getByRole('button', { name: 'Print / PDF' }).click();
-    await expect(page).toHaveURL(/#\/demo\/print$/);
+    // Phase 9: a new tab, so the deck stays where it is.
+    await (await opened).waitForURL(/#\/demo\/print$/);
+    await expect(page).toHaveURL(/#\/demo\/3$/);
   });
 
   test('KEYS is generated from the command registry', async ({ page }) => {

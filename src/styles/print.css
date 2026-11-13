@@ -1,1 +1,181 @@
-/* Print and PDF (§9 Phase 9 task 2). Phase 9 writes this file. */
+/* The print view (§9 Phase 9) on screen and on paper. Every page is the deck's
+   stage size: PrintView.svelte writes the @page rule with the deck's W×H; the
+   rule here is the 16:9 default. Inside .print-page sizes are logical pixels,
+   as on the stage. */
+
+@page {
+  size: 1600px 900px;
+  margin: 0;
+}
+
+/* ── On screen: the pages scaled to fit the window, under a bar ── */
+
+.print-view {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.print-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: var(--bar-top);
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.print-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.print-title .label {
+  white-space: nowrap;
+}
+
+.print-square {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  background: var(--ink);
+}
+
+.print-count {
+  margin-left: 16px;
+}
+
+.print-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.print-pages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 24px;
+}
+
+/* One page, at the window's scale on screen. */
+.print-sheet {
+  flex: none;
+  width: calc(var(--W) * var(--k, 1));
+  height: calc(var(--H) * var(--k, 1));
+  outline: 1px solid var(--line);
+}
+
+/* The page itself: W×H logical, a positioned box holding the slide and its
+   marks. Marks outside the stage rectangle are clipped. */
+.print-page {
+  position: relative;
+  width: var(--W);
+  height: var(--H);
+  overflow: hidden;
+  transform: scale(var(--k, 1));
+  transform-origin: 0 0;
+  background: var(--bg);
+}
+
+/* The page number sits in the bottom-left safe margin (§8: 8% of the width,
+   104 at the bottom), in the slide's own theme. */
+.print-number {
+  position: absolute;
+  left: calc(var(--W) * 0.08);
+  bottom: 46px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+  pointer-events: none;
+}
+
+/* Over a picture the number steps up one level, as the chrome does. */
+.print-page[data-over-image] .print-number {
+  color: var(--ink-2);
+}
+
+.print-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: calc(100% - var(--bar-top));
+  text-align: center;
+}
+
+.print-empty p {
+  margin: 0;
+}
+
+/* ── On paper ── */
+
+@media print {
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    transition: none !important;
+    animation: none !important;
+  }
+
+  html,
+  body {
+    background: var(--bg);
+  }
+
+  /* The deck view keeps the page from scrolling; paper needs every page. */
+  body {
+    overflow: visible;
+  }
+
+  /* No chrome on paper. */
+  .print-bar,
+  .topbar,
+  .bottombar,
+  .drawbar {
+    display: none !important;
+  }
+
+  .print-view {
+    position: static;
+    overflow: visible;
+  }
+
+  .print-pages {
+    display: block;
+    padding: 0;
+  }
+
+  .print-sheet {
+    width: var(--W);
+    height: var(--H);
+    overflow: hidden;
+    outline: none;
+    break-after: page;
+    break-inside: avoid;
+  }
+
+  .print-sheet:last-child {
+    break-after: auto;
+  }
+
+  .print-page {
+    transform: none;
+  }
+}

@@ -19,6 +19,12 @@ export function isPresenterRoute(): boolean {
   return parseHash(location.hash).view === 'presenter';
 }
 
+/** This window shows `#/<slug>/presenter` or `#/<slug>/print`: no stage, no overlays. */
+function isViewOnlyRoute(): boolean {
+  const view = parseHash(location.hash).view;
+  return view === 'presenter' || view === 'print';
+}
+
 /**
  * Open the presenter window for the open deck. Must run synchronously inside
  * the key or click handler, or the browser blocks the pop-up.
@@ -40,8 +46,9 @@ implement('blackout', () => {
   ui.blackout = true;
 }, hasSlides);
 
-// Nothing on the presenter route shows these: the overlays, zoom, the marks
-// tools (the presenter is view-and-drive only), and hiding the chrome.
+// Nothing on the presenter or print route shows these: the overlays, zoom, the
+// marks tools (both are view only), and hiding the chrome. Print also has no
+// use for blackout or a presenter window (Phase 9).
 const NOT_ON_PRESENTER = [
   'settings', 'overview', 'source',
   'zoom', 'zoomIn', 'zoomOut', 'zoomReset',
@@ -53,5 +60,11 @@ for (const id of NOT_ON_PRESENTER) {
   const command = getCommand(id);
   if (!command) throw new Error(`dex: unknown command "${id}"`);
   const when = command.when;
-  command.when = (event) => !isPresenterRoute() && (when ? when(event) : true);
+  command.when = (event) => !isViewOnlyRoute() && (when ? when(event) : true);
+}
+
+for (const id of ['blackout', 'presenter']) {
+  const command = getCommand(id)!;
+  const when = command.when;
+  command.when = (event) => parseHash(location.hash).view !== 'print' && (when ? when(event) : true);
 }

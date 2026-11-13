@@ -23,6 +23,10 @@ type FetchResult =
 async function fetchDeck(slug: string): Promise<FetchResult> {
   try {
     const res = await fetch(`decks/${slug}/deck.json`, { cache: 'no-store' });
+    // A static host with an SPA fallback answers a missing deck with the page itself.
+    if ((res.headers.get('content-type') ?? '').includes('text/html')) {
+      return { ok: false, status: 404, error: `no deck "${slug}"`, line: null };
+    }
     if (res.ok) return { ok: true, deck: (await res.json()) as Deck };
     const body = (await res.json().catch(() => ({}))) as { error?: string; line?: number | null };
     const error = body.error ?? (res.status === 404 ? `no deck "${slug}"` : `HTTP ${res.status}`);

@@ -114,10 +114,11 @@
     if (slug && slug !== current?.slug) location.hash = formatRoute({ view: 'deck', slug, n: null });
   }
 
+  // A new tab, so the deck stays where it is (§9 Phase 9 task 3).
   function openPrint() {
     if (!current) return;
     close();
-    location.hash = formatRoute({ view: 'print', slug: current.slug });
+    window.open(`${location.pathname}${location.search}${formatRoute({ view: 'print', slug: current.slug })}`, '_blank', 'noopener');
   }
 
   function openPresenter() {

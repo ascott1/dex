@@ -77,9 +77,11 @@
   });
 
   // Effective theme on <html>: the bars and the letterbox follow the slide (§7).
-  // The presenter window keeps the deck theme: its slides carry their own.
+  // The presenter and print views keep the deck theme: their slides carry their own.
   const theme = $derived(
-    route.view === 'presenter' ? baseTheme() : slideTheme(deck.current?.slides[nav.index]),
+    route.view === 'presenter' || route.view === 'print'
+      ? baseTheme()
+      : slideTheme(deck.current?.slides[nav.index]),
   );
   // The chrome sits on a picture: its labels step up one level (§9 Phase 4, task 6).
   const overImage = $derived(deck.current?.slides[nav.index]?.attrs['data-bg'] === 'image');
@@ -89,7 +91,11 @@
 
   $effect(() => {
     const title = deck.current ? `${deck.current.meta.title} · dex` : 'dex';
-    document.title = route.view === 'presenter' ? `Presenter · ${title}` : title;
+    // In print the title is the PDF's default file name: the deck's own title.
+    document.title =
+      route.view === 'presenter' ? `Presenter · ${title}`
+        : route.view === 'print' && deck.current ? deck.current.meta.title
+        : title;
   });
 
   $effect(() => {
