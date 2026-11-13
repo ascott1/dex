@@ -209,7 +209,7 @@ test.describe.serial('print view with marks, on a 4:3 deck', () => {
 
   test('print keys: no overlays or tools open on the print route', async ({ page }) => {
     await openPrint(page, slug, 3);
-    for (const key of ['s', 'g', 'm', 'd', 'n', 'b']) await page.keyboard.press(key);
+    for (const key of ['s', 'g', 'm', '?', 'd', 'n', 'b']) await page.keyboard.press(key);
     const ui = await page.evaluate(() => {
       const u = (window as unknown as { __dex: { ui: { overlay: unknown; tool: unknown; blackout: boolean } } }).__dex.ui;
       return { overlay: u.overlay, tool: u.tool, blackout: u.blackout };

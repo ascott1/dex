@@ -16,6 +16,7 @@
   import BottomBar from './components/BottomBar.svelte';
   import DeckIndex from './components/DeckIndex.svelte';
   import ErrorOverlay from './components/ErrorOverlay.svelte';
+  import KeysView from './components/KeysView.svelte';
   import Overview from './components/Overview.svelte';
   import PresenterView from './components/PresenterView.svelte';
   import PrintView from './components/PrintView.svelte';
@@ -174,6 +175,7 @@
     <Overview />
     <SettingsSheet />
     <SourceView />
+    <KeysView />
     <Blackout />
     <ErrorOverlay />
   {/if}

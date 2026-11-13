@@ -429,7 +429,7 @@ test.describe.serial('presenter', () => {
   test('keys with nothing to show on the presenter route do nothing there', async ({ context }) => {
     const presenter = await openPresenter(context);
     const before = await dex(presenter, (d) => d.settings.chrome);
-    for (const key of ['s', ',', 'g', 'm', 'z', '+', '-', 'd', 'n', 'l', 'a', 'c', 'h', 'p']) {
+    for (const key of ['s', ',', 'g', 'm', '?', 'z', '+', '-', 'd', 'n', 'l', 'a', 'c', 'h', 'p']) {
       await presenter.keyboard.press(key);
     }
     const state = await dex(presenter, (d) => ({

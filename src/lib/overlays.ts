@@ -20,6 +20,7 @@ const hasDeck = () => deck.current !== null;
 implement('settings', () => toggleOverlay('settings'), hasDeck);
 implement('overview', () => toggleOverlay('overview'), hasDeck);
 implement('source', () => toggleOverlay('source'), hasDeck);
+implement('keys', () => toggleOverlay('keys'), hasDeck);
 
 // ── Go to slide ──────────────────────────────────────────────────────────────
 // Digits collect in `ui.goto` (shown in the bottom bar as `GO TO 12`); `Enter`

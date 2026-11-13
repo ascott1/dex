@@ -1,6 +1,6 @@
 // Transient UI state (§7). Never persisted.
 
-export type Overlay = null | 'settings' | 'overview' | 'source';
+export type Overlay = null | 'settings' | 'overview' | 'source' | 'keys';
 export type Tool = null | 'draw' | 'note' | 'laser';
 
 export const ui = $state({

@@ -73,6 +73,7 @@ export const commands: Command[] = [
   { id: 'overview', title: 'Overview grid', keys: ['g'], phase: 5, run: noop },
   { id: 'settings', title: 'Settings', keys: ['s', ','], phase: 5, run: noop },
   { id: 'source', title: 'Markdown source of this slide', keys: ['m'], phase: 5, run: noop },
+  { id: 'keys', title: 'Keyboard shortcuts', keys: ['?'], phase: 5, run: noop },
 
   // Phase 6
   { id: 'draw', title: 'Draw', keys: ['d'], phase: 6, run: noop },

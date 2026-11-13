@@ -459,6 +459,129 @@ test.describe('source view', () => {
   });
 });
 
+test.describe('keyboard shortcuts', () => {
+  const slug = 'zz-e2e-keys';
+  test.beforeAll(() => removeTempDecks());
+  test.afterAll(() => removeTempDecks());
+
+  const keys = (page: Page) => page.getByRole('dialog', { name: 'Keyboard shortcuts' });
+
+  test('? opens it and ? closes it; Esc and CLOSE close it; the settings sheet and overview give way', async ({ page }) => {
+    await open(page, '#/demo/1');
+    await page.keyboard.press('?');
+    await expect(keys(page)).toBeVisible();
+    await expect(keys(page)).toBeFocused();
+    await page.keyboard.press('?');
+    await expect(keys(page)).toHaveCount(0);
+
+    await page.keyboard.press('?');
+    await expect(keys(page)).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(keys(page)).toHaveCount(0);
+
+    await page.keyboard.press('?');
+    await keys(page).getByRole('button', { name: 'Close' }).click();
+    await expect(keys(page)).toHaveCount(0);
+
+    // Opening it replaces another overlay; Esc then closes only it.
+    await page.keyboard.press('g');
+    await expect(overview(page)).toBeVisible();
+    await page.keyboard.press('?');
+    await expect(keys(page)).toBeVisible();
+    await expect(overview(page)).toHaveCount(0);
+  });
+
+  test('lists every group, in order, and real bindings', async ({ page }) => {
+    await open(page, '#/demo/1');
+    await page.keyboard.press('?');
+    await expect(keys(page).locator('h3')).toHaveText(['Move', 'View', 'Draw and notes', 'Zoom', 'Present']);
+    await expect(keys(page).getByRole('list')).toHaveCount(5);
+
+    const row = (what: string) => keys(page).getByRole('listitem').filter({ hasText: what });
+    await expect(row('Overview of every slide')).toContainText('g');
+    await expect(row('Go to that slide')).toContainText('1–9');
+    await expect(row('Go to that slide')).toContainText('Enter');
+    await expect(row('Keyboard shortcuts')).toContainText('?');
+    await expect(row('Hide or show the bars')).toContainText('h');
+    await expect(row('Next step or slide')).toContainText('→');
+    await expect(row('Zoom at the pointer')).toContainText('Pinch');
+  });
+
+  test('is flat, mono keys and sans descriptions, and fits at 1280×720', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await open(page, '#/demo/1');
+    await page.keyboard.press('?');
+    const view = keys(page);
+    await expect(view).toBeVisible();
+    const m = await view.evaluate((el) => {
+      const all = [...el.querySelectorAll<HTMLElement>('*')];
+      const row = el.querySelector<HTMLElement>('.row')!;
+      return {
+        scrolls: el.scrollHeight > el.clientHeight,
+        radii: all.filter((c) => getComputedStyle(c).borderRadius !== '0px').length,
+        shadows: all.filter((c) => getComputedStyle(c).boxShadow !== 'none').length,
+        keyFont: getComputedStyle(row.querySelector('kbd')!).fontFamily,
+        whatFont: getComputedStyle(row.querySelector('.what')!).fontFamily,
+        // A group never splits: every group's box lies within one column.
+        columns: new Set([...el.querySelectorAll<HTMLElement>('.group')].map((g) => Math.round(g.getBoundingClientRect().left))).size,
+      };
+    });
+    expect(m.scrolls).toBe(false);
+    expect(m.radii).toBe(0);
+    expect(m.shadows).toBe(0);
+    expect(m.keyFont).toContain('DM Mono');
+    expect(m.whatFont).toContain('DM Sans');
+    expect(m.columns).toBe(3);
+  });
+
+  test('the settings sheet’s ALL KEYS button opens it in place of the sheet', async ({ page }) => {
+    await open(page, '#/demo/1');
+    await page.keyboard.press('s');
+    await sheet(page).getByRole('button', { name: 'All keys' }).click();
+    await expect(keys(page)).toBeVisible();
+    await expect(sheet(page)).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(keys(page)).toHaveCount(0);
+  });
+
+  test('? typed in the deck <select> does not open it', async ({ page }) => {
+    await open(page, '#/demo/1');
+    await page.keyboard.press('s');
+    await sheet(page).locator('select').focus();
+    await page.keyboard.press('?');
+    await expect(keys(page)).toHaveCount(0);
+    await expect(sheet(page)).toBeVisible();
+  });
+
+  test('? typed in a sticky note does not open it', async ({ page }) => {
+    writeDeck(slug, '# Keys deck\n\n---\n\n## Second\n\nText');
+    await page.goto(`/#/${slug}/1`);
+    await expect(current(page)).toHaveCount(1);
+    await page.waitForFunction(() => (window as unknown as { __dex: { marks: { loaded: boolean } } }).__dex.marks.loaded);
+    await page.mouse.move(700, 400);
+    await page.mouse.move(710, 410);
+    await page.keyboard.press('n');
+    const textarea = page.locator('.notes-layer .sticky textarea');
+    await expect(textarea).toBeFocused();
+    await page.keyboard.type('why?');
+    await expect(textarea).toHaveValue('why?');
+    await expect(keys(page)).toHaveCount(0);
+  });
+
+  test('focus returns to where it was on close', async ({ page }) => {
+    await open(page, '#/demo/1');
+    const button = page.getByRole('button', { name: 'Settings' });
+    await button.focus();
+    await page.keyboard.press('?');
+    await expect(keys(page)).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(keys(page).getByRole('button', { name: 'Close' })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(keys(page)).toHaveCount(0);
+    await expect(button).toBeFocused();
+  });
+});
+
 test.describe('motion', () => {
   // The suite runs with reduced motion, which zeroes the durations already.
   test.use({ reducedMotion: 'no-preference' });

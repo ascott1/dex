@@ -653,7 +653,7 @@ Vite's own host check and CORS rules run before these endpoints (verified: a req
 | `deck` | `list: DeckSummary[]`, `current: Deck \| null`, `error: string \| null`; `loadIndex()`, `loadDeck(slug)`, `reload()` |
 | `nav` | `index`, `step`; `next()`, `prev()`, `nextSlide()`, `prevSlide()`, `goto(i)`, `first()`, `last()` |
 | `settings` | a `Settings` object persisted to `localStorage` on change; `theme` per deck |
-| `ui` | `overlay: null \| 'settings' \| 'overview' \| 'source'`, `tool: null \| 'draw' \| 'note' \| 'laser'`, `blackout`, `camera: { k, x, y }`, `pointer: { x, y, inside }` in stage coordinates, `fullscreen`, `idle` |
+| `ui` | `overlay: null \| 'settings' \| 'overview' \| 'source' \| 'keys'`, `tool: null \| 'draw' \| 'note' \| 'laser'`, `blackout`, `camera: { k, x, y }`, `pointer: { x, y, inside }` in stage coordinates, `fullscreen`, `idle` |
 | `marks` | the deck's `Marks`, undo/redo stacks, load and save |
 | `sync` | the `BroadcastChannel` wrapper |
 
@@ -691,6 +691,7 @@ One registry: `{ id, title, keys: string[], run(): void, when?(): boolean }`. `k
 | digits then `Enter` | Go to slide number | 5 |
 | `s` or `,` | Settings | 5 |
 | `m` | Markdown source of this slide | 5 |
+| `?` | Keyboard shortcuts (every key, grouped) | 5 |
 | `d` | Draw | 6 |
 | `n` | New sticky note | 6 |
 | `l` | Laser pointer | 6 |
@@ -702,7 +703,7 @@ One registry: `{ id, title, keys: string[], run(): void, when?(): boolean }`. `k
 | `z`, `+`, `-`, `0` | Zoom toggle, in, out, reset | 7 |
 | `p` | Open presenter window | 8 |
 | `b` or `.` | Blackout | 8 |
-| `Esc` | Close the topmost thing: settings, overview, source, note editing, tool, zoom, blackout — in that order | 3 |
+| `Esc` | Close the topmost thing: settings, keyboard shortcuts, overview, source, note editing, tool, zoom, blackout — in that order | 3 |
 
 Presentation clickers send `PageDown`, `PageUp`, and often `b` or `.`; those are covered.
 
@@ -1348,3 +1349,4 @@ Executors: add a line here whenever the implementation differs from this plan. F
 - Phase 10 — the demo deck is retitled "dex" and rewritten so that reading it teaches the tool; it keeps one slide per layout and feature, the same 23 slides in the same order, the same skip, invert, bg and overflow slides, every slide with a speaker note, zero warnings. Its slide 4 is now `lists-that-build` (`static.spec.ts`), the cache test edits that slide's second item, the top-bar test expects `dex`, and the gallery slide gained a `##` heading (still `gallery`). `e2e/static.spec.ts` gained a test that the presenter window opens from the static build and drives the deck, since the README says it works there. `pnpm shots` also writes `docs/shots/details/` (the overlaid chrome over a `bg` picture in fullscreen at 1920×1080, marker and pen, the laser trail, a missing image, the overview with the current slide selected, both themes).
 - Phase 10 — `README.md` (233 lines) written for a person: install and start, a first deck, the authoring format with the example deck, the key table, presenting tips, PDF and static export. Every command and key in it was checked against the code; the starter deck's comment ("README.md explains the format: slides, layouts, builds, notes, and media") matches its sections. A walkthrough was run: `pnpm new`, five slides with an image written from the README, compiled with zero warnings into title, default, split, quote, statement, presented, presenter opened.
 - Phase 10 — left as is: the laser streak shows faint steps where its segment widths change; on a `bg` slide with a light picture the demo's paragraph runs over the plate's black square (readable, as Ink text on black); the marker on Ink is muted (see above); the presenter's right column has space under the timer at 1280×800.
+- 2026-11-13 — keyboard-shortcuts screen (after Phase 10): `?` opens `KeysView.svelte`, a full-window overlay that is a sibling of the overview (same header, `--bg`, fade, dialog and focus handling) and lists every key in five groups (Move, View, Draw and notes, Zoom, Present). `Overlay` gains `'keys'`; the registry gains the `keys` command (`?`, with the Phase 5 commands), implemented in `overlays.ts` and, like `source`, inert on the presenter and print routes (`NOT_ON_PRESENTER` in `presenter.ts`). `ESCAPE_RANK.keys` is 15, between settings and overview. The list is `src/lib/key-help.ts`, which takes keys and titles from the registry (a row may override them; pinch, ⌘/Ctrl + wheel and drag are static rows); `key-help.test.ts` fails if a command with keys is left off. The settings sheet keeps its cheat sheet and gains an `All keys` button. README key table gains the `?` row. `shared/types.ts` is unchanged.

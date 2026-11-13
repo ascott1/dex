@@ -289,6 +289,7 @@
           </p>
         {/each}
       </div>
+      <button class="label button all-keys" type="button" onclick={() => (ui.overlay = 'keys')}>All keys</button>
 
       <h3 class="label section">Deck</h3>
       <dl class="rows">
@@ -414,6 +415,10 @@
 
   .keys p {
     margin: 0;
+  }
+
+  .all-keys {
+    margin-top: 12px;
   }
 
   /* A key and its word stay together; lines break only at the dots. */

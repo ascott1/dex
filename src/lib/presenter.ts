@@ -50,7 +50,7 @@ implement('blackout', () => {
 // marks tools (both are view only), and hiding the chrome. Print also has no
 // use for blackout or a presenter window (Phase 9).
 const NOT_ON_PRESENTER = [
-  'settings', 'overview', 'source',
+  'settings', 'overview', 'source', 'keys',
   'zoom', 'zoomIn', 'zoomOut', 'zoomReset',
   'draw', 'note', 'laser', 'marks', 'clear', 'undo', 'redo', 'penSmaller', 'penLarger', 'noteDelete', 'noteEdit',
   'chrome',

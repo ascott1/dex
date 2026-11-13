@@ -185,6 +185,7 @@ Keep `---` out of comments: it still starts a new slide. A misspelt option (`lay
 | `h` | Hide or show the bars |
 | `g` | Overview of every slide |
 | `s` or `,` | Settings, with the full list of keys |
+| `?` | Every keyboard shortcut |
 | `m` | The Markdown of this slide |
 | `p` | Open the presenter window |
 | `b` or `.` | Black out the screen; any key brings it back |
