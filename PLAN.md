@@ -697,6 +697,8 @@ One registry: `{ id, title, keys: string[], run(): void, when?(): boolean }`. `k
 
 Presentation clickers send `PageDown`, `PageUp`, and often `b` or `.`; those are covered.
 
+`Esc` is a ranked chain in `src/lib/escape.ts` (built in Phase 5). A phase adds a layer, or replaces a default one, with `onEscape(id, rank, close)`; `ESCAPE_RANK` holds the order. Overlays are exclusive: `ui.overlay` is a single value.
+
 ---
 
 ## 8. Design system
@@ -1085,12 +1087,20 @@ Sticky notes (`NotesLayer.svelte`, `StickyNote.svelte`):
 - `n` adds a note at the pointer's stage position, or at the stage center if the pointer is outside, and focuses it for typing. The `NOTE` button in the bottom bar arms note mode: the next click on the stage places a note.
 - A note is 220×220 by default, background from its color token, text in DM Sans 22 / 1.3 in `--note-ink`, 16 padding, square corners, and the one permitted shadow: `0 1px 0 rgb(0 0 0 / 0.08), 0 10px 24px -14px rgb(0 0 0 / 0.35)`. It grows downward with its text.
 - Not editing: drag anywhere on the note to move it (clamped to the stage); click selects it (1px `--note-ink` outline); `Delete` or `Backspace` removes the selected note; double-click or `Enter` edits. When selected, a small row above the note shows three color squares and a `×`.
-- Editing: a `<textarea>` filling the note. `Esc` or clicking outside finishes. An empty note is removed when editing ends.
+- Editing: a `<textarea>` filling the note. `Esc` or clicking outside finishes. An empty note is removed when editing ends. The default `editing` layer in the Esc chain only clears `ui.editing`; replace it with `onEscape('editing', ESCAPE_RANK.editing, …)` so that ending an edit with `Esc` also removes an empty note.
 - Notes are inside `.camera`, so they scale and zoom with the slide.
 
 Laser (`Laser.svelte`): `l` toggles. A 14px `--red` dot follows the pointer with a short fading trail (the last 12 positions). Nothing is stored. The system cursor is hidden while it is on. `Laser` is mounted outside `.camera`, so position it from the pointer's offset within `.stage` divided by the stage scale, not from `clientToStage` (which returns camera-space coordinates and would drift once zoom exists).
 
-Also: `a` and the MARKS setting hide or show both layers. Wire `CLEAR THIS SLIDE` and `CLEAR ALL` in the settings sheet (`CLEAR ALL` asks for a second click on a `CONFIRM` state). The overview shows a small solid square next to the number of any slide that has marks.
+Also: `a` and the MARKS setting hide or show both layers. The overview shows a small solid square next to the number of any slide that has marks; it goes in the thumbnail's `.caption`, beside `.num`.
+
+Clearing, three scopes:
+
+- `c` and the draw bar's `CLEAR` remove the current slide's **drawings** (strokes, arrows, boxes). Sticky notes stay. Fill the `clear` command with this.
+- The sheet's `CLEAR THIS SLIDE` removes the current slide's drawings **and** its sticky notes. Phase 5 wired that button to the `clear` command; point it at a new `clearSlideMarks()` in `marks.svelte.ts` instead.
+- The sheet's `CLEAR ALL` removes every slide's marks, after a second click on a `CONFIRM` state. Fill the `clearAllMarks()` stub Phase 5 left in `marks.svelte.ts`.
+
+All three are undoable.
 
 Acceptance (Playwright):
 
@@ -1136,8 +1146,8 @@ Tasks:
 3. `PresenterView.svelte`, on `--bg`, 24px padding, in two columns:
    - Left (about 62%): the current slide in a 1px `--line` frame, at its current build step. Under it, Labels: `SLIDE 07 / 36` and `STEP 2 / 4` when the slide has builds.
    - Right: the next slide, smaller, labelled `NEXT` (or `END` on the last slide); the timer in DM Mono 40px (`00:12:34`, starts on the first navigation, click to pause, double-click to reset) with the wall-clock time as a Label beside it; then the notes, in DM Sans 22px / 1.5, scrollable, with `NO NOTES` as a Label when empty.
-   - All navigation keys work here and drive the audience window.
-4. `Blackout.svelte`: `b` or `.` covers the window with solid `#000`; any key or click clears it. Synced.
+   - All navigation keys work here and drive the audience window. The overlays (settings, overview, source) are not mounted on this route, so give their commands a `when` that is false here; otherwise `s`, `g` and `m` change state nothing shows.
+4. `Blackout.svelte`: `b` or `.` covers the window with solid `#000`; any key or click clears it. Synced. "Any key" must be handled in `keys.ts` before the command lookup: while blackout is on, the next key clears it and does nothing else. Otherwise a digit would start a go-to, and `Esc` would close other layers first.
 
 Acceptance (Playwright with two pages in one browser context):
 
@@ -1155,7 +1165,7 @@ Tasks:
 
 1. `PrintView.svelte` at `#/<slug>/print`: every non-skipped slide in order as its own block, using `SlideView` with `revealAll`, each with its own `data-theme`. A bar at the top (hidden when printing) with a `PRINT` button and toggles for including marks and skipped slides.
 2. `print.css`: `@page { size: 1600px 900px; margin: 0 }` (use the deck's stage size), each slide block exactly that size with `break-after: page`, `print-color-adjust: exact`, chrome hidden. A mono page number in the bottom-left safe margin of each page.
-3. The `PRINT / PDF` button in settings opens the print route.
+3. The `PRINT / PDF` button in settings opens the print route in a new tab (`window.open`), so the deck stays where it is. Phase 5 wired it to navigate in the same window; change that.
 4. Static build: confirm `pnpm build && pnpm preview` runs the full deck from `dist/` with relative URLs only, that marks fall back to `localStorage`, that the FOLLOW EDITS control is absent, and that `dist/` also works when served from a subpath.
 5. Add a `<noscript>` line to `index.html`.
 
@@ -1268,6 +1278,7 @@ Executors: add a line here whenever the implementation differs from this plan. F
 - Phase 4 — chrome over a `bg` image: `.app` gets `data-over-image` (set in `App.svelte`) and `chrome.css` steps the labels up one level as decided. On the demo's light plate under the 0.55 scrim, the counter and deck title read, but the idle `← → NOTE DRAW` (now `--ink-3`) are still close to invisible. Left as decided; a second step, or a `--bg` strip under the bars only on image slides, would fix it.
 - Phase 4 — `App.svelte` sets `data-dev` on `.app` in dev, for the `OVERFLOW` label (13px fixed, a dev marker, not slide text).
 - Phase 4 — Playwright has two projects: `chromium` (smoke, ignores `shots.spec.ts`) and `shots` (only `shots.spec.ts`); `pnpm test:e2e` runs `--project=chromium`, `pnpm shots` runs `--project=shots`. `pnpm shots` also writes `docs/shots/report.json` (layout, density, overflow per shot) and `docs/shots/measure.json` (the §8 reference measurements at Quiet, taken from the DOM), five sample slides at Quiet and Loud, and the title, bullets, columns and both split slides on 4:3 and 16:10 stages at Regular and Quiet (temporary `decks/zz-e2e-aspect-*` decks, removed afterwards). `docs/shots/` is gitignored.
+- Phase 5 (follow-up by the planner) — review found no defects. Decisions and notes recorded for later phases: the three scopes of clearing marks (Phase 6); replacing the `editing` Esc layer (Phase 6); blackout's "any key" and overlay keys on the presenter route (Phase 8); `PRINT / PDF` opening a new tab (Phase 9); and the Esc chain in §7.
 - Phase 5 — `Esc` chain: `src/lib/escape.ts` holds ranked layers (`ESCAPE_RANK`: goto 0, warnings 5, settings 10, overview 20, source 30, editing 40, tool 50, zoom 60, blackout 70) and `onEscape(id, rank, close)`; `escape()` asks them in order and stops at the first that closes something. `commands.ts` `escape()` now delegates to it. Defaults for every layer are registered from `ui` state (the Phase 3 behaviour); Phases 6–8 replace their layer by id (`onEscape('editing', ESCAPE_RANK.editing, …)`) when closing needs more than clearing state. Go-to digits are cancelled before anything else closes.
 - Phase 5 — `keys.ts`: a focused button or link keeps `Enter` and `Space` unless a command with a `when` claims the key. Found by a test: in the overview focus sits on a thumbnail button, so `8`, `Enter` pressed the button instead of going to slide 8. Only `goto` claims `Enter` (while digits are typed), so nothing else changes; a later phase that gives `next` a `when` would let it take `Space` from focused buttons.
 - Phase 5 — go-to: up to four digits (a fifth starts over); a number past the end lands on the last slide; skipped slides can be reached; `Enter` with digits typed in the overview closes it; the command is inactive on a deck with no slides. The bottom-bar label is `--ink` so it reads against the idle `--ink-4` arrows.
