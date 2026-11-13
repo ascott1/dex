@@ -241,15 +241,12 @@ test.describe('settings sheet', () => {
     await expect(page).toHaveURL(/#\/demo\/3$/);
   });
 
-  test('KEYS is generated from the command registry', async ({ page }) => {
+  test('KEYS offers the keyboard-shortcuts screen and names its key', async ({ page }) => {
     await open(page, '#/demo/1');
     await page.keyboard.press('s');
     const keys = sheet(page).locator('.keys');
-    await expect(keys).toContainText('← → move');
-    await expect(keys).toContainText('space build');
-    await expect(keys).toContainText('g slides');
-    await expect(keys).toContainText('s settings');
-    await expect(keys).toContainText('m markdown');
+    await expect(keys.getByRole('button', { name: 'Keyboard shortcuts' })).toBeVisible();
+    await expect(keys).toContainText('or press ? at any time');
   });
 });
 
@@ -534,10 +531,10 @@ test.describe('keyboard shortcuts', () => {
     expect(m.columns).toBe(3);
   });
 
-  test('the settings sheet’s ALL KEYS button opens it in place of the sheet', async ({ page }) => {
+  test('the settings sheet’s KEYBOARD SHORTCUTS button opens it in place of the sheet', async ({ page }) => {
     await open(page, '#/demo/1');
     await page.keyboard.press('s');
-    await sheet(page).getByRole('button', { name: 'All keys' }).click();
+    await sheet(page).getByRole('button', { name: 'Keyboard shortcuts' }).click();
     await expect(keys(page)).toBeVisible();
     await expect(sheet(page)).toHaveCount(0);
     await page.keyboard.press('Escape');

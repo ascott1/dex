@@ -2,62 +2,8 @@
   import { getCommand } from '../lib/commands';
   import { keyLabel } from '../lib/keys';
 
-  // The KEYS cheat sheet (§9 Phase 5 task 2). The keys come from the command
-  // registry; the short words are written here. `[id, i]` is the i-th key of a
-  // command, `[id, i, j]` the range i–j (digits).
-  type KeyRef = [id: string, index: number, to?: number];
-  const KEY_HELP: [KeyRef[], string][][] = [
-    [
-      [[['prev', 0], ['next', 0]], 'move'],
-      [[['next', 1]], 'build'],
-      [[['nextSlide', 0], ['prevSlide', 0]], 'skip builds'],
-      [[['first', 0], ['last', 0]], 'first / last'],
-    ],
-    [
-      [[['goto', 0, 9], ['goto', 10]], 'go to'],
-      [[['overview', 0]], 'slides'],
-      [[['settings', 0]], 'settings'],
-      [[['source', 0]], 'markdown'],
-      [[['escape', 0]], 'close'],
-    ],
-    [
-      [[['theme', 0]], 'theme'],
-      [[['fullscreen', 0]], 'full screen'],
-      [[['chrome', 0]], 'chrome'],
-      [[['presenter', 0]], 'presenter'],
-      [[['blackout', 0]], 'blackout'],
-    ],
-    [
-      [[['draw', 0]], 'draw'],
-      [[['note', 0]], 'note'],
-      [[['laser', 0]], 'laser'],
-      [[['marks', 0]], 'marks'],
-      [[['clear', 0]], 'clear'],
-    ],
-    [
-      [[['undo', 0]], 'undo'],
-      [[['redo', 0]], 'redo'],
-      [[['penSmaller', 0], ['penLarger', 0]], 'pen size'],
-    ],
-    [
-      [[['zoom', 0]], 'zoom'],
-      [[['zoomIn', 0], ['zoomOut', 0]], 'in / out'],
-      [[['zoomReset', 0]], 'reset zoom'],
-    ],
-  ];
-
-  function keyText([id, i, to]: KeyRef): string {
-    const keys = getCommand(id)?.keys ?? [];
-    const a = keys[i];
-    if (a === undefined) return '';
-    const b = to === undefined ? undefined : keys[to];
-    return (b === undefined ? keyLabel(a) : `${keyLabel(a)}–${keyLabel(b)}`).toLowerCase();
-  }
-
-  // One string per item, so a line can only wrap between items.
-  const keyLines: string[][] = KEY_HELP.map((line) =>
-    line.map(([refs, word]) => `${refs.map(keyText).filter(Boolean).join(' ')} ${word}`),
-  );
+  // The key that opens the keyboard-shortcuts screen, from the registry.
+  const keysKey = keyLabel(getCommand('keys')?.keys[0] ?? '?');
 </script>
 
 <script lang="ts">
@@ -282,14 +228,10 @@
       {/if}
 
       <h3 class="label section">Keys</h3>
-      <div class="keys help-text">
-        {#each keyLines as line, i (i)}
-          <p>
-            {#each line as item, j (j)}<span class="item">{item}</span>{#if j < line.length - 1}<span class="dot" aria-hidden="true">{' · '}</span>{/if}{/each}
-          </p>
-        {/each}
+      <div class="keys">
+        <button class="label button" type="button" onclick={() => (ui.overlay = 'keys')}>Keyboard shortcuts</button>
+        <span class="help-text">or press <kbd>{keysKey}</kbd> at any time</span>
       </div>
-      <button class="label button all-keys" type="button" onclick={() => (ui.overlay = 'keys')}>All keys</button>
 
       <h3 class="label section">Deck</h3>
       <dl class="rows">
@@ -409,21 +351,16 @@
   }
 
   .keys {
-    line-height: 1.6;
-    text-wrap: pretty;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
   }
 
-  .keys p {
-    margin: 0;
-  }
-
-  .all-keys {
-    margin-top: 12px;
-  }
-
-  /* A key and its word stay together; lines break only at the dots. */
-  .keys .item {
-    white-space: nowrap;
+  .keys kbd {
+    font-family: var(--font-mono);
+    font-size: inherit;
+    color: var(--ink);
   }
 
   /* Info rows: a 96px Label column and a Control-text value, bordered. */

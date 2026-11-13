@@ -676,7 +676,7 @@ Navigation rules:
 
 ### Commands and keys (`lib/commands.ts`, `lib/keys.ts`)
 
-One registry: `{ id, title, keys: string[], run(): void, when?(): boolean }`. `keys.ts` maps `keydown` to commands. The key list in the settings sheet is generated from the registry. Phase 3 registers every command below; commands owned by later phases start with an empty `run`. A later phase fills its stubs by calling `implement(id, run, when?)` from its own module, without editing `commands.ts`.
+One registry: `{ id, title, keys: string[], run(): void, when?(): boolean }`. `keys.ts` maps `keydown` to commands. The keyboard-shortcuts screen (`?`) is generated from the registry. Phase 3 registers every command below; commands owned by later phases start with an empty `run`. A later phase fills its stubs by calling `implement(id, run, when?)` from its own module, without editing `commands.ts`.
 
 | Keys | Command | Phase |
 |---|---|---|
@@ -1057,7 +1057,7 @@ Tasks:
    | CHROME | Auto (hides in fullscreen) · Always · Hidden |
    | MARKS | Shown (drawings and notes) · Hidden (kept, not shown), then buttons `CLEAR THIS SLIDE` and `CLEAR ALL` (wired in Phase 6) |
    | FOLLOW EDITS | On (jump to the slide you are editing) · Off — only rendered when `import.meta.env.DEV` |
-   | KEYS | The cheat sheet generated from the command registry, as Help text: `← → move · space build · g slides · …` |
+   | KEYS | A `Keyboard shortcuts` button that opens the keyboard-shortcuts screen, and Help text: `or press ? at any time` |
    | DECK | Info rows: deck (a `<select>` of all decks; changing it navigates), slides, source path. Buttons `PRESENTER` and `PRINT / PDF` (wired in Phases 8 and 9). |
 
 3. `Overview.svelte` (`g` or the overview icon): a full-window overlay on `--bg`. A grid of thumbnails, `repeat(auto-fill, minmax(260px, 1fr))`, gap 24. Each thumbnail is a real `SlideView` with `revealAll`, scaled by CSS transform inside a box with the stage's aspect ratio and a 1px `--line` border, `inert`, with `content-visibility: auto`. Under it, a Label: the zero-padded number and the title. The current slide has an `--ink` border. Skipped slides are at 40% opacity with a `SKIP` Label. Arrow keys move the selection, `Enter` or click opens the slide, `g` or `Esc` closes. Opening scrolls the current slide into view.
@@ -1350,3 +1350,4 @@ Executors: add a line here whenever the implementation differs from this plan. F
 - Phase 10 — `README.md` (233 lines) written for a person: install and start, a first deck, the authoring format with the example deck, the key table, presenting tips, PDF and static export. Every command and key in it was checked against the code; the starter deck's comment ("README.md explains the format: slides, layouts, builds, notes, and media") matches its sections. A walkthrough was run: `pnpm new`, five slides with an image written from the README, compiled with zero warnings into title, default, split, quote, statement, presented, presenter opened.
 - Phase 10 — left as is: the laser streak shows faint steps where its segment widths change; on a `bg` slide with a light picture the demo's paragraph runs over the plate's black square (readable, as Ink text on black); the marker on Ink is muted (see above); the presenter's right column has space under the timer at 1280×800.
 - 2026-11-13 — keyboard-shortcuts screen (after Phase 10): `?` opens `KeysView.svelte`, a full-window overlay that is a sibling of the overview (same header, `--bg`, fade, dialog and focus handling) and lists every key in five groups (Move, View, Draw and notes, Zoom, Present). `Overlay` gains `'keys'`; the registry gains the `keys` command (`?`, with the Phase 5 commands), implemented in `overlays.ts` and, like `source`, inert on the presenter and print routes (`NOT_ON_PRESENTER` in `presenter.ts`). `ESCAPE_RANK.keys` is 15, between settings and overview. The list is `src/lib/key-help.ts`, which takes keys and titles from the registry (a row may override them; pinch, ⌘/Ctrl + wheel and drag are static rows); `key-help.test.ts` fails if a command with keys is left off. The settings sheet keeps its cheat sheet and gains an `All keys` button. README key table gains the `?` row. `shared/types.ts` is unchanged.
+- 2026-11-13 — settings KEYS (owner request): the six-line cheat sheet is gone; the section is a `Keyboard shortcuts` button and the line `or press ? at any time`. The full list lives only on the `?` screen.

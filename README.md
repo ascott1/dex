@@ -184,7 +184,7 @@ Keep `---` out of comments: it still starts a new slide. A misspelt option (`lay
 | `t` | Switch between Paper and Ink |
 | `h` | Hide or show the bars |
 | `g` | Overview of every slide |
-| `s` or `,` | Settings, with the full list of keys |
+| `s` or `,` | Settings |
 | `?` | Every keyboard shortcut |
 | `m` | The Markdown of this slide |
 | `p` | Open the presenter window |
@@ -207,7 +207,7 @@ You can also zoom with a trackpad pinch or `⌘`/`Ctrl` and the mouse wheel, and
 
 **Drawing and sticky notes.** Marks stay with their slide. While you run `pnpm start` they are saved to `decks/<name>/marks.json`, so you can commit them with the deck or delete the file to start clean. Settings has buttons to clear one slide or the whole deck.
 
-**Settings.** Press `s` for text size (Quiet for screen sharing, Regular for most rooms, Loud for big ones), builds, motion, when the bars hide, and the full key list.
+**Settings.** Press `s` for text size (Quiet for screen sharing, Regular for most rooms, Loud for big ones), builds, motion, and when the bars hide. Press `?` for every keyboard shortcut.
 
 ## PDF
 
