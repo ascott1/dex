@@ -147,7 +147,7 @@ test.describe('demo deck', () => {
 
   test('a bg image resolves against the page, not the stylesheet', async ({ page }) => {
     await open(page, `#/demo/${BG}`);
-    const bg = await current(page).evaluate((el) => getComputedStyle(el).backgroundImage);
+    const bg = await current(page).locator('.slide-bleed').evaluate((el) => getComputedStyle(el).backgroundImage);
     // The scrim is a flat layer drawn over the picture, so the url() is the last layer.
     expect(bg.endsWith(`, url("${new URL('decks/demo/media/plate-4.svg', page.url()).href}")`)).toBe(true);
   });
@@ -197,21 +197,71 @@ test.describe('demo deck', () => {
     expect(width).toBeCloseTo((1600 * 6) / COUNT, 0);
   });
 
+  // In a window the bars are docked: the stage area is what is left between them.
+  const BAR_TOP = 50;
+  const BAR_BOTTOM = 46;
+
   for (const [w, h] of [[1600, 900], [1280, 720], [1024, 900], [2560, 1080]] as const) {
-    test(`the stage is centered and fully visible at ${w}×${h}`, async ({ page }) => {
+    test(`the stage is centered between the bars and fully visible at ${w}×${h}`, async ({ page }) => {
       await page.setViewportSize({ width: w, height: h });
       await open(page, '#/demo/1');
-      const scale = Math.min(w / 1600, h / 900);
+      const areaH = h - BAR_TOP - BAR_BOTTOM;
+      const scale = Math.min(w / 1600, areaH / 900);
       await expect(page.locator('.stage')).toHaveAttribute('data-scale', scale.toFixed(4));
       const box = (await page.locator('.stage').boundingBox())!;
       expect(box.width).toBeCloseTo(1600 * scale, 0);
       expect(box.height).toBeCloseTo(900 * scale, 0);
       expect(box.x).toBeCloseTo((w - box.width) / 2, 0);
-      expect(box.y).toBeCloseTo((h - box.height) / 2, 0);
+      expect(box.y).toBeCloseTo(BAR_TOP + (areaH - box.height) / 2, 0);
       expect(box.x).toBeGreaterThanOrEqual(-0.5);
-      expect(box.y).toBeGreaterThanOrEqual(-0.5);
+      expect(box.y).toBeGreaterThanOrEqual(BAR_TOP - 0.5);
       expect(box.x + box.width).toBeLessThanOrEqual(w + 0.5);
-      expect(box.y + box.height).toBeLessThanOrEqual(h + 0.5);
+      expect(box.y + box.height).toBeLessThanOrEqual(h - BAR_BOTTOM + 0.5);
+    });
+  }
+
+  test('hiding the chrome gives the stage the whole window', async ({ page }) => {
+    await page.setViewportSize({ width: 1600, height: 900 });
+    await open(page, '#/demo/1');
+    const area = page.locator('.viewport');
+    expect(await area.boundingBox()).toEqual({ x: 0, y: BAR_TOP, width: 1600, height: 900 - BAR_TOP - BAR_BOTTOM });
+    await page.keyboard.press('h');
+    await expect(page.locator('.stage')).toHaveAttribute('data-scale', '1.0000');
+    expect(await area.boundingBox()).toEqual({ x: 0, y: 0, width: 1600, height: 900 });
+  });
+
+  // Windows are rarely the stage's shape. Full-bleed pictures and backgrounds
+  // run past the stage to the edges of the stage area, never under the bars.
+  for (const [w, h] of [[1024, 900], [2000, 1176]] as const) {
+    test(`full-bleed layers fill the stage area and stop at the bars at ${w}×${h}`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: h });
+      type Box = { x: number; y: number; width: number; height: number };
+      const area: Box = { x: 0, y: BAR_TOP, width: w, height: h - BAR_TOP - BAR_BOTTOM };
+      // The stage re-fits a frame after its area changes, so poll.
+      const fills = (selector: string, want: Box) =>
+        expect(async () => {
+          const box = await current(page).locator(selector).boundingBox();
+          expect(box).not.toBeNull();
+          for (const key of ['x', 'y', 'width', 'height'] as const) {
+            expect(Math.abs(box![key] - want[key]), key).toBeLessThan(1);
+          }
+        }).toPass({ timeout: 3000 });
+
+      await open(page, '#/demo/11');   // image layout
+      await fills('.s-media img', area);
+
+      await open(page, `#/demo/${BG}`);   // bg image
+      await fills('.slide-bleed', area);
+
+      await open(page, '#/demo/8');   // split, image on the right, cover
+      const stage = (await page.locator('.stage').boundingBox())!;
+      const half = stage.x + stage.width / 2;
+      await fills('.s-media img', { x: half, y: area.y, width: w - half, height: area.height });
+
+      // With the chrome hidden the same layers reach the edges of the window.
+      await page.keyboard.press('h');
+      await open(page, '#/demo/11');
+      await fills('.s-media img', { x: 0, y: 0, width: w, height: h });
     });
   }
 
@@ -219,10 +269,12 @@ test.describe('demo deck', () => {
     for (const [w, h] of [[1600, 900], [1024, 900]] as const) {
       await page.setViewportSize({ width: w, height: h });
       await open(page, '#/demo/1');
-      await page.mouse.move(w / 2, h / 2);
-      await page.mouse.move(w / 2 + 1, h / 2);
+      // The middle of the stage area, which sits between the docked bars.
+      const midY = BAR_TOP + (h - BAR_TOP - BAR_BOTTOM) / 2;
+      await page.mouse.move(w / 2, midY);
+      await page.mouse.move(w / 2 + 1, midY);
       const p = await page.evaluate(() => (window as unknown as { __dex: { ui: { pointer: { x: number; y: number; inside: boolean } } } }).__dex.ui.pointer);
-      const scale = Math.min(w / 1600, h / 900);
+      const scale = Math.min(w / 1600, (h - BAR_TOP - BAR_BOTTOM) / 900);
       expect(p.x).toBeCloseTo(800 + 1 / scale, 0);
       expect(p.y).toBeCloseTo(450, 0);
       expect(p.inside).toBe(true);
@@ -263,6 +315,21 @@ test.describe.serial('live reload', () => {
     await expect(current(page)).toContainText('Edited on disk', { timeout: 10_000 });
     await expectSlide(page, 3, slug, 4);
     await expectSamePage(page);
+  });
+
+  test('an update that arrives while the deck is still opening does not lose the slide in the URL', async ({ page }) => {
+    writeDeck(slug, deckWith('Before'));
+    // Hold every deck.json response long enough for the edit below to land mid-open.
+    await page.route(`**/decks/${slug}/deck.json`, async (route) => {
+      await new Promise((r) => setTimeout(r, 400));
+      await route.continue();
+    });
+    const loading = page.goto(`/#/${slug}/3`);
+    await page.waitForRequest(`**/decks/${slug}/deck.json`);
+    writeDeck(slug, deckWith('During the open'));
+    await loading;
+    await expect(current(page)).toContainText('During the open', { timeout: 10_000 });
+    await expectSlide(page, 3, slug, 4);
   });
 
   test('with follow-edits off, the current slide is kept by id', async ({ page }) => {

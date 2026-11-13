@@ -35,7 +35,9 @@
   padding: var(--m-top) var(--m-x) var(--m-bottom);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  /* Clipped to the stage plus the letterbox around it, so full-bleed layers
+     reach the edges of the stage area. Outside a stage the bleed is 0. */
+  clip-path: inset(calc(var(--bleed-y, 0px) * -1) calc(var(--bleed-x, 0px) * -1));
   background-color: var(--bg);
   color: var(--ink);
   font-family: var(--font-sans);
@@ -411,11 +413,21 @@
   border: 0;
 }
 
-/* ── Background image under a dark scrim (§8; scrim 0.55 per Phase 4 task 6).
-   The scrim is a flat layer over the picture, not a pseudo-element, so
-   ::before and ::after stay free. ── */
+/* ── The bleed layer (rendered by SlideView, first in the slide): the slide's
+   background, extended past the stage to the edges of the stage area. When the
+   window is not the stage's shape, this is what keeps a picture or a colour
+   from stopping short with a band of page background beside it. ── */
 
-.slide[data-bg='image'] {
+.slide > .slide-bleed {
+  position: absolute;
+  z-index: -1;
+  inset: calc(var(--bleed-y, 0px) * -1) calc(var(--bleed-x, 0px) * -1);
+  pointer-events: none;
+}
+
+/* Background image under a dark scrim (§8; scrim 0.55 per Phase 4 task 6).
+   The scrim is a flat layer over the picture. */
+.slide[data-bg='image'] > .slide-bleed {
   background-image:
     linear-gradient(rgb(0 0 0 / 0.55), rgb(0 0 0 / 0.55)),
     var(--slide-bg);

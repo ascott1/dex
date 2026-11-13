@@ -72,6 +72,8 @@
     style:transform="scale({fit.scale})"
     style:--W="{size.W}px"
     style:--H="{size.H}px"
+    style:--bleed-x="{fit.scale > 0 ? fit.left / fit.scale : 0}px"
+    style:--bleed-y="{fit.scale > 0 ? fit.top / fit.scale : 0}px"
     data-scale={fit.scale.toFixed(4)}
   >
     <div
@@ -100,16 +102,23 @@
 </main>
 
 <style>
+  /* The stage area: the whole window, or the space between docked bars. It
+     clips; the stage does not, so a full-bleed layer can run past the stage's
+     edges into the letterbox (--bleed-x, --bleed-y, in logical pixels). */
   .viewport {
     position: fixed;
     inset: 0;
     overflow: hidden;
   }
 
+  :global(.app[data-dock]) .viewport {
+    top: var(--bar-top);
+    bottom: var(--bar-bottom);
+  }
+
   .stage {
     position: absolute;
     transform-origin: 0 0;
-    overflow: hidden;
   }
 
   .camera {

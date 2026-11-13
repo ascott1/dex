@@ -104,6 +104,12 @@
     }
   });
 
+  // A `bg` colour is also painted on the bleed layer, so it reaches the edges
+  // of the stage area. A `bg` image gets there through CSS (slide.css).
+  const bleedFill = $derived(
+    slide.options.bg && slide.attrs['data-bg'] !== 'image' ? slide.options.bg : undefined,
+  );
+
   // In-slide `#…` links (footnotes) would replace the route hash.
   function onclick(event: MouseEvent) {
     const link = (event.target as Element | null)?.closest?.('a[href^="#"]');
@@ -124,5 +130,7 @@
   aria-hidden={current ? undefined : 'true'}
   {onclick}
 >
+  <!-- Paints the slide's background out to the edges of the stage area (slide.css). -->
+  <div class="slide-bleed" aria-hidden="true" style:background={bleedFill}></div>
   {@html slide.html}
 </section>

@@ -58,8 +58,20 @@ export async function loadIndex(): Promise<void> {
 // Every load bumps this; a response that arrives after a newer request started is dropped.
 let generation = 0;
 
+// The open in flight, if any. A reload waits for it (see `reload`).
+let opening: Promise<boolean> | null = null;
+
 /** Open a deck. Resolves to true when it loaded. */
-export async function loadDeck(slug: string): Promise<boolean> {
+export function loadDeck(slug: string): Promise<boolean> {
+  const p = openDeck(slug);
+  opening = p;
+  void p.finally(() => {
+    if (opening === p) opening = null;
+  });
+  return p;
+}
+
+async function openDeck(slug: string): Promise<boolean> {
   const gen = ++generation;
   deck.slug = slug;
   if (deck.current && deck.current.slug !== slug) deck.current = null;
@@ -84,6 +96,10 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * changed. Keeps the showing deck when the fetch fails.
  */
 export async function reload(): Promise<void> {
+  // An update can arrive while the deck is still opening. Superseding the open
+  // would drop it before the route's slide number is applied, leaving the page
+  // on slide 1. Let the open finish, then refetch.
+  if (opening) await opening.catch(() => false);
   const slug = deck.slug;
   if (!slug) return;
   const gen = ++generation;

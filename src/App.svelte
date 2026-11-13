@@ -79,6 +79,12 @@
       : ui.fullscreen && ui.idle ? 'hidden' : 'shown',
   );
 
+  // Docked bars take their own space, and the stage fits between them, so a
+  // full-bleed picture ends at the hairlines. In fullscreen under `auto`, and
+  // when hidden, the bars are an overlay and the stage has the whole window, so
+  // showing and hiding them never resizes the slide.
+  const docked = $derived(settings.chrome === 'always' || (settings.chrome === 'auto' && !ui.fullscreen));
+
   // Chrome auto-hide: idle after 2.5s without pointer movement.
   let idleTimer: ReturnType<typeof setTimeout> | undefined;
   function wake() {
@@ -113,6 +119,7 @@
   data-text={settings.textScale}
   data-motion={settings.motion ? 'on' : 'off'}
   data-chrome={chrome}
+  data-dock={docked ? '' : undefined}
   data-tool={ui.tool ?? undefined}
   data-view={route.view}
   data-over-image={overImage ? '' : undefined}

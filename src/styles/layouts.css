@@ -250,6 +250,18 @@
   margin: calc(-1 * var(--m-top)) 0 calc(-1 * var(--m-bottom));
 }
 
+/* A cover image goes further: past the stage, to the edges of the stage area. */
+.slide[data-layout='split']:not([data-imgfit='contain']) > .s-media {
+  margin-top: calc(-1 * (var(--m-top) + var(--bleed-y, 0px)));
+  margin-bottom: calc(-1 * (var(--m-bottom) + var(--bleed-y, 0px)));
+  margin-right: calc(-1 * var(--bleed-x, 0px));
+}
+
+.slide[data-layout='split'][data-image='left']:not([data-imgfit='contain']) > .s-media {
+  margin-right: 0;
+  margin-left: calc(-1 * var(--bleed-x, 0px));
+}
+
 .slide[data-layout='split'][data-image='left'] > .s-main {
   grid-column: 2;
   padding: 0 var(--m-x) 0 72px;
@@ -296,8 +308,9 @@
 /* A caption on a full-bleed picture sits bottom-left on a --bg strip. */
 .slide:is([data-layout='image'], [data-layout='split']:not([data-imgfit='contain'])) .s-media figcaption {
   position: absolute;
-  left: var(--m-x);
-  bottom: var(--m-bottom);
+  /* Measured from the stage, wherever the picture's own edges are. */
+  left: calc(var(--m-x) + var(--bleed-x, 0px));
+  bottom: calc(var(--m-bottom) + var(--bleed-y, 0px));
   margin: 0;
   padding: 8px 12px;
   background-color: var(--bg);
@@ -344,7 +357,8 @@
 
 .slide[data-layout='image'] > .s-media {
   position: absolute;
-  inset: 0;
+  /* The whole stage area, not only the stage. */
+  inset: calc(var(--bleed-y, 0px) * -1) calc(var(--bleed-x, 0px) * -1);
 }
 
 .slide[data-layout='image'] > .s-main {

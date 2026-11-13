@@ -588,7 +588,7 @@ Phase 3 builds this skeleton with every component present. Components owned by l
 <html data-theme="paper">                          effective theme of the current slide
 <div class="app" data-text="regular" data-motion="on" data-chrome="shown|hidden" data-tool="draw|note|laser">
   <TopBar/>                                        fixed, 50px
-  <main class="viewport">                          fills the window
+  <main class="viewport">                          the stage area (see below)
     <div class="stage">                            1600×900 logical, scaled to fit, centered
       <div class="camera">                         zoom/pan transform (Phase 7)
         <div class="slides"> <SlideView/> … </div> previous, current, next
@@ -606,7 +606,8 @@ Phase 3 builds this skeleton with every component present. Components owned by l
 ```
 
 - **Stage fit** (`lib/stage.ts`): `W` is 1600, 1440, or 1200 for 16:9, 16:10, 4:3; `H` is 900. `scale = min(viewportWidth / W, viewportHeight / H)`. The stage is centered and gets `transform: scale(scale)` with `transform-origin: 0 0`. Recompute with a `ResizeObserver`.
-- The stage fits the **whole window**, bars included. The bars are transparent overlays. Slides keep generous inner margins, so the bars never cover content on any window at least 600px tall, and hiding the chrome causes no reflow.
+- **Stage area.** In a window the bars are docked: they take their own space and the stage fits between them, so nothing on a slide runs under a bar. In fullscreen under `chrome: 'auto'`, and whenever the chrome is hidden, the bars are an overlay and the stage area is the whole window, so bars fading in and out never resize the slide. `chrome: 'always'` docks them everywhere. `.app` carries `data-dock` while docked; `.viewport` is the stage area.
+- **Bleed.** A window is rarely the stage's shape, so the stage is letterboxed inside its area. `Stage` publishes the letterbox as `--bleed-x` and `--bleed-y` (logical pixels, per side). `.stage` does not clip; `.viewport` does. `SlideView` renders a `.slide-bleed` element first in every slide, which paints a `bg` colour or image out to the edges of the stage area; the `image` layout and the cover half of `split` extend the same way. Text never bleeds. Slides clip to the stage plus the bleed. Outside a stage (thumbnails, print) the bleed is 0, so a slide is exactly its own shape.
 - `html` has `background: var(--bg)`, so the area around the stage matches the slide.
 - **Effective theme**: the deck theme (per-deck override, else frontmatter), flipped when the current slide has `invert`, forced to `ink` when it has a `bg` image. It is set on `<html>` so the bars and letterbox flip with the slide. Every `SlideView` also sets `data-theme` on its own root, so thumbnails and print pages are themed independently. Tokens are therefore defined on `[data-theme=…]`, never on `:root`.
 - **Slides rendered**: previous, current, and next. Only the current one is visible; the others are `visibility: hidden` so their images are already loaded. The transition is a CSS opacity change on a `.current` class.
@@ -843,9 +844,9 @@ Safe margins on the stage: 128 left and right (8% of the width for other aspects
 | `statement` | Same centered column, `calc(1240px * var(--ts))` wide. A second paragraph becomes a caption (Caption role at 1.25× its size) 1.2em below. |
 | `quote` | Same centered column, `calc(1160px * var(--ts))` wide. The blockquote has the same left rule (0.07em wide) and 0.8em of padding. Attribution 40 below, in caption style. No quotation-mark glyphs. |
 | `columns` | Head on top. `.s-cols` is a grid of `data-count` equal columns (5 or 6 columns wrap to 3 per row), gap 56. Each column has a 1px `--ink` rule on top and 24 of padding above its content. Column text uses the Small role. |
-| `split` | Two halves. The text half keeps the outer safe margin and a 72 inner margin, content centered vertically. The media half is full-bleed to the stage edges with `object-fit: cover`. With `data-imgfit="contain"` the media half gets 72 of padding and the image is contained. |
+| `split` | Two halves. The text half keeps the outer safe margin and a 72 inner margin, content centered vertically. The media half is full-bleed with `object-fit: cover`: to the stage edges, and beyond them to the edges of the stage area (§7 "Bleed"). With `data-imgfit="contain"` the media half gets 72 of padding and the image is contained. |
 | `figure` | Head on top, the image fills the remaining safe area, contained, left-aligned. Caption below. |
-| `image` | The image covers the whole stage. A caption, if any, sits bottom-left on a `--bg` strip with 8×12 padding. |
+| `image` | The image covers the whole stage area: the stage and its letterbox (§7 "Bleed"). The caption is placed from the stage, not from the picture's edge. A caption, if any, sits bottom-left on a `--bg` strip with 8×12 padding. |
 | `gallery` | Optional head. Grid with 16 gaps: 2 → two columns, 3 → three, 4 → 2×2, 5–6 → 3×2. Images cover their cells. |
 | `full` | No padding. Direct children fill the stage; an `iframe` is 100% × 100% with no border. |
 
@@ -859,7 +860,7 @@ Content elements (all layouts):
 - **Inline code**: mono at 0.88em on a `--tint` background with 0.1em×0.3em padding.
 - **Links**: `--ink`, 1px underline, 0.18em offset. **Strong**: weight 700. **`mark`**: `--marker` background at 60%.
 - **Footnotes** (`section.footnotes`): pinned to the bottom of the safe area, caption-sized sans text in `--ink-2`, with a 1px `--line` rule above. Hide the back-reference arrows and the "Footnotes" heading.
-- **Background image** (`data-bg="image"`): the image covers the stage under a `rgb(0 0 0 / 0.55)` scrim.
+- **Background image** (`data-bg="image"`): the image covers the stage area (§7 "Bleed") under a `rgb(0 0 0 / 0.55)` scrim. A `bg` colour fills the same area.
 - **Overflow flag** (`data-overflow`, dev only): a small `OVERFLOW` label in `--red`, mono, at the bottom-right of the slide.
 
 ### Chrome
@@ -871,7 +872,7 @@ Content elements (all layouts):
 | Bottom bar | `--bar-bottom` (46px), transparent, 20px side padding, 1px `--line` hairline above. Left: `←` `→` buttons in `--ink-4` (hover `--ink`), then the counter `01 / 36` as a Label with tabular numerals. Right: text buttons `NOTE` and `DRAW` as Labels in `--ink-4` (hover `--ink`). When zoomed, a `200%` Label appears before them and resets zoom on click. |
 | Draw bar | Replaces the right side of the bottom bar in draw mode, as in the reference. A status Label `DRAW` in `--ink-4`, then tool names as Labels in `--ink-2`. The active tool has a 2px `--red` underline 4px below the text. Actions that are unavailable are `--ink-4`. `DONE` is `--red`. This is the only color in the chrome. |
 | Icons | Inline SVG, 16×16 viewBox, 1px stroke, `stroke-linecap: square`, no fill, `currentColor`. Overview: a square divided 3×3. Fullscreen: four corner brackets. Settings: two horizontal lines each with a small square knob. |
-| Auto-hide | `chrome: 'auto'`: bars are visible in a window; in fullscreen they fade out after 2.5s without pointer movement and return on movement. `'always'` and `'hidden'` do what they say. Fading is opacity only. |
+| Auto-hide | `chrome: 'auto'`: bars are visible and docked in a window (the stage sits between them); in fullscreen they fade out after 2.5s without pointer movement and return on movement. `'always'` and `'hidden'` do what they say. Fading is opacity only. |
 | Sheet (settings) | Centered, 432px wide, 40px from the top and bottom of the window (max height `100vh - 80px`), scrolls inside. 1px solid `--ink` border, `--bg` background, 18px padding. Backdrop is `--scrim`. Header row: `SETTINGS` Label left, `CLOSE` text button right. |
 | Section label | A Label with 28px above and 10px below. |
 | Segmented control | Equal-width cells in a row, 1px `--line` borders (shared between cells), 8px side padding. Each cell has Control text and an optional Sublabel under it; cells are 41px tall with a sublabel and 30px without. Selected: `--fill` background, `--on-fill` text, sublabel at 60% opacity. |
@@ -1209,7 +1210,7 @@ Acceptance:
 | Decision | Chosen | Alternative |
 |---|---|---|
 | UI framework | Svelte 5 | React. The compiler, plugin, data model, and CSS would be unchanged; §7 and the component tasks would be rewritten. Decide before Phase 3. |
-| Canvas | Fixed 1600×900 stage scaled to the window | Fluid layout that reflows with the window, as Maeda's appears to. Rejected because marks, zoom, thumbnails, and PDF all depend on fixed coordinates. |
+| Canvas | Fixed 1600×900 stage scaled to fit: between the bars in a window, the whole screen in fullscreen. Full-bleed pictures and backgrounds extend past the stage to fill whatever shape the window is. | Fluid layout that reflows with the window, as Maeda's appears to. Rejected because marks, zoom, thumbnails, and PDF all depend on fixed coordinates. |
 | Default type size | `Regular`, about 1.4× the reference's type, for legibility in a room. `Quiet` reproduces the reference's sizes. | Make `Quiet` the default. One-line change in `DEFAULT_SETTINGS`. |
 | Marks storage | `decks/<slug>/marks.json`, written by the dev server, so marks survive browsers and can be committed | Browser storage only. Add `marks.json` to `.gitignore` if they should stay local. |
 | Color in the UI | One accent, orange-red, and only in draw mode (the active tool's underline and `DONE`), as in the reference. Otherwise red and blue exist only as pen colors; yellow, pink, and blue only as sticky notes. | Use the accent elsewhere in the chrome, or nowhere. |
@@ -1256,6 +1257,7 @@ Executors: add a line here whenever the implementation differs from this plan. F
 - Phase 3 — `index.html` has `<link rel="icon" href="data:,">`, so no `favicon.ico` request 404s in the console.
 - Phase 3 — Playwright runs with one worker, in file order, and `reducedMotion: 'reduce'`. Tests that need to edit a deck write `decks/zz-e2e-*` (gitignored) via `e2e/temp-deck.ts`, and those folders are removed in `afterAll` and again in `globalTeardown`. In dev, `window.__dex` exposes `{ deck, nav, settings, ui }` for tests and the console.
 - Phase 3 — known rough edges for Phase 4: on the `bg` image slide, the chrome Labels (`--ink-3`) are barely visible over the scrimmed light demo image. Shiki puts `background-color: var(--shiki-background)` inline on each `pre`, which beats a stylesheet `background`; `code.css` needs to set `--shiki-background` (for example to `var(--tint)`) instead. The `OVERFLOW` flag (§8) is not drawn yet, though `data-overflow` is set.
+- Phase 4 (follow-up by the planner) — three things. (1) The owner saw full-bleed pictures run under the bars in a window, and stop short of the screen edges in fullscreen. The stage had been fitted to the whole window with the bars drawn over it, and nothing extended past the stage. Now the bars are docked in a window and the stage fits between them; full-bleed layers extend into the letterbox (`--bleed-x`, `--bleed-y`, the `.slide-bleed` element). §7 and §8 describe it; the over-image label rule now applies only to overlaid chrome. (2) A real race, found as a flaky test: a `dex:update` arriving while a deck was still opening superseded the open, so the slide number in the URL was dropped and the page landed on slide 1. `reload()` now waits for an open in flight; a test holds the response and edits mid-open. (3) Phase 4's eased heading tracking and the `data-len` attribute on quotes are accepted as recorded below.
 - Phase 4 — §8 values changed (the §8 tables above now carry the new values). (1) Display tracking eased: `h1` -0.03em → -0.015em, `h2` -0.02em → -0.01em, statement -0.03em → -0.02em, quote -0.015em → -0.01em. DM Sans switches to its display optical size at these sizes, which is already tightly spaced; at the original values letter pairs touched ("ee" in "Three", "go" in "good"), seen side by side in an A/B render. Owner may want to flip this back. (2) The lede block's top margin is 1.57em (of the lede), not 1.4em: 1.4em gave a rule top 0.64× the heading size below its baseline, short of the 0.7× target; 1.57em measures 0.69×. (3) The scrim is 0.55, as Phase 4 task 6 decided (§8 still said 0.45).
 - Phase 4 — the title layout's eyebrow and the section number hang above the heading (negative top margin equal to their height plus gap), so the heading-plus-lede block is what is centered on the stage, and a title slide's heading sits in the same place with or without an eyebrow. Measured at Quiet: block centre 450.0 on a 450 stage centre.
 - Phase 4 — compiler: `quote` slides get `data-len` (`l` over 140 characters, attribution excluded, else `m`), because §8 sets long quotes at 32 / 1.3 and no attribute exposed the length. `layout.ts` `computeAttrs`, one new test, and the demo snapshot (the quote slide gains `data-len="m"`; hashes unchanged). §6 "Computed attributes" updated.
