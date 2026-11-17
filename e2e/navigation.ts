@@ -268,6 +268,18 @@ export function demoDeckTests({ dev }: { dev: boolean }): void {
     });
   }
 
+  test('a figure and a `fit: contain` split show the whole image; other layouts crop to fill', async ({ page }) => {
+    const fit = () => current(page).locator('.s-media img').first().evaluate((img) => getComputedStyle(img).objectFit);
+    await open(page, '#/demo/8');    // split, cover by default
+    expect(await fit()).toBe('cover');
+    await open(page, '#/demo/9');    // split with `fit: contain`
+    expect(await fit()).toBe('contain');
+    await open(page, '#/demo/10');   // figure, contain by default
+    expect(await fit()).toBe('contain');
+    await open(page, '#/demo/12');   // gallery
+    expect(await fit()).toBe('cover');
+  });
+
   test('clientToStage maps the pointer to stage coordinates at any window size', async ({ page }) => {
     test.skip(!dev, 'reads window.__dex, which only a dev build exposes');
     for (const [w, h] of [[1600, 900], [1024, 900]] as const) {
