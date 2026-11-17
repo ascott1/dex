@@ -67,7 +67,14 @@ A diagram should be on a figure slide or a split with `fit: contain`. The other 
 **It cannot use the deck's fonts.** For the same reason, text in an SVG is drawn in DM Sans and DM Mono only where those fonts are installed on the computer showing the deck; elsewhere it falls back to a system font. In order of preference:
 
 1. Leave the words to the slide. A heading, a caption, or a columns slide under the image sets them in the real fonts.
-2. Embed the two fonts in the SVG. Add a `<style>` with an `@font-face` for each, with the font file as a base64 `data:` URL. The files are already in the project: `node_modules/@fontsource-variable/dm-sans/files/dm-sans-latin-wght-normal.woff2` and `node_modules/@fontsource/dm-mono/files/dm-mono-latin-400-normal.woff2`. This adds about 70 KB to the file and then works everywhere: the live deck, the PDF, the PowerPoint export, and a published site. These are the Latin subsets, so other scripts and symbols such as arrows still fall back.
+2. Embed the fonts in the SVG, with `pnpm fonts`:
+
+   ```sh
+   pnpm fonts talk                          # every SVG in decks/talk
+   pnpm fonts decks/talk/media/flow.svg     # or one file
+   ```
+
+   It writes the fonts the file's text uses into the file itself, which then looks right everywhere: the live deck, the PDF, the PowerPoint export, and a published site. An SVG with no text in DM Sans or DM Mono is left alone. The file grows by about 100 KB with both fonts, 80 KB with DM Sans alone, 20 KB with DM Mono alone. Run it again after editing the text; it replaces what it wrote before. It embeds upright text only, not italics, and names any character the fonts do not have, such as `→`, which is drawn in another font: draw arrows as lines.
 3. Install DM Sans and DM Mono (free on Google Fonts) on the computer you present from. Enough for presenting and for exports made on that computer, but a published site shows the fallback to anyone without them.
 
 ## Prompt: a diagram or plate, as SVG
@@ -172,4 +179,4 @@ The same command turns a photograph into the deck's two colours, which is usuall
 - No rounded corners, shadows, or gradients.
 - It is drawn at the shape of its slot, and a diagram is on a figure slide or a split with `fit: contain`.
 - Press `t` on the slide. It should read in Paper and in Ink.
-- If it has text, the fonts are embedded or installed.
+- If it has text, `pnpm fonts` has been run on it since the last edit.

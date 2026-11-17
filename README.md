@@ -169,7 +169,7 @@ Keep `---` out of comments: it still starts a new slide. A misspelt option (`lay
 - `![What it shows](media/photo.jpg "A caption")`: the quoted text after the path becomes a visible caption. Paths are relative to the deck's folder; web addresses work too.
 - A path ending in `.mp4`, `.webm`, or `.mov` is a video with controls. The words `autoplay`, `loop`, and `muted` in the description turn those on; an autoplay video starts when its slide is shown and pauses when you leave it.
 - A missing image shows as a framed box with its path, and the terminal names the missing file.
-- To make a diagram or illustration that looks like part of the deck, see [docs/images.md](docs/images.md): the colours and sizes to draw at, and prompts to paste into an assistant or an image generator.
+- To make a diagram or illustration that looks like part of the deck, see [docs/images.md](docs/images.md): the colours and sizes to draw at, and prompts to paste into an assistant or an image generator. If an SVG has text in it, run `pnpm fonts <name>` so the text is in the deck's fonts on any computer.
 - Code blocks are highlighted. ` ```ts {2,4-5} ` highlights lines 2, 4, and 5 and dims the rest.
 
 ## Presenting
@@ -231,6 +231,7 @@ pnpm preview        # tries dist/ locally
 |---|---|
 | `pnpm start [name]` | Start the editing server and open the browser |
 | `pnpm new <name>` | Create `decks/<name>/deck.md` from the starter deck |
+| `pnpm fonts <name>` | Embed DM Sans and DM Mono in the deck's SVG images, so their text looks the same on every computer ([docs/images.md](docs/images.md)) |
 | `pnpm build` / `pnpm preview` | Build the static site into `dist/` / serve it locally |
 | `pnpm check` | Type-check the code |
 | `pnpm test` / `pnpm test:e2e` | Unit tests / browser tests |

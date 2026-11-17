@@ -10,6 +10,7 @@
   "scripts": {
     "start": "node engine/scripts/start.mjs",
     "new": "node engine/scripts/new.mjs",
+    "fonts": "node engine/scripts/fonts.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.node.json",
