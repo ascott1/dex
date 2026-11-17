@@ -169,6 +169,7 @@ Keep `---` out of comments: it still starts a new slide. A misspelt option (`lay
 - `![What it shows](media/photo.jpg "A caption")`: the quoted text after the path becomes a visible caption. Paths are relative to the deck's folder; web addresses work too.
 - A path ending in `.mp4`, `.webm`, or `.mov` is a video with controls. The words `autoplay`, `loop`, and `muted` in the description turn those on; an autoplay video starts when its slide is shown and pauses when you leave it.
 - A missing image shows as a framed box with its path, and the terminal names the missing file.
+- To make a diagram or illustration that looks like part of the deck, see [docs/images.md](docs/images.md): the colours and sizes to draw at, and prompts to paste into an assistant or an image generator.
 - Code blocks are highlighted. ` ```ts {2,4-5} ` highlights lines 2, 4, and 5 and dims the rest.
 
 ## Presenting

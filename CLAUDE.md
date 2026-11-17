@@ -22,3 +22,4 @@ Markdown in, deck out. `PLAN.md` is the source of truth: §1–§8 are the spec,
 
 - `docs/reference/` is gitignored and local only. Never commit anything from it.
 - Node 22, pnpm 10. TypeScript stays on 6 (`svelte-check` 4.7 peer range).
+- When asked to make an image or diagram for a deck, follow `docs/images.md` and check the result on its slide in both themes.

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="660" viewBox="0 0 1600 660">
+<title>Four steps from a saved file to the slide on screen</title>
+<rect width="1600" height="660" fill="#dce9e6"/>
+<g font-family="'DM Mono', Menlo, Consolas, monospace" font-size="18" letter-spacing="2.16" fill="#485653">
+<text x="120" y="226">01 WRITE</text>
+<text x="490" y="226">02 COMPILE</text>
+<text x="860" y="226">03 SEND</text>
+<text x="1230" y="226">04 SHOW</text>
+<text x="152" y="554">ONLY THE CHANGED SLIDE IS SENT</text>
+</g>
+<g fill="none" stroke="#0f1413" stroke-width="2">
+<rect x="121" y="251" width="248" height="158"/>
+<rect x="491" y="251" width="248" height="158"/>
+<rect x="861" y="251" width="248" height="158"/>
+<rect x="1231" y="251" width="248" height="158"/>
+<path d="M382 330H476M462 316L476 330L462 344"/>
+<path d="M1122 330H1216M1202 316L1216 330L1202 344"/>
+</g>
+<path d="M752 330H846M832 316L846 330L832 344" fill="none" stroke="#e04e2b" stroke-width="4"/>
+<rect x="120" y="540" width="16" height="16" fill="#e04e2b"/>
+<g font-family="'DM Sans', system-ui, sans-serif" font-size="32" fill="#0f1413">
+<text x="145" y="382">deck.md</text>
+<text x="515" y="382">compiler</text>
+<text x="885" y="382">dev server</text>
+<text x="1255" y="382">browser</text>
+</g>
+</svg>
