@@ -1,7 +1,7 @@
 // Phase 9: the print view and the PDF it makes (PLAN.md §9 Phase 9). The PDF
 // checks read the file Chromium writes: its page objects and their size, and
 // the first fill of each page's content stream, which is the page background.
-// Marks come from a temporary deck under decks/zz-e2e-*, never decks/demo.
+// Marks come from a temporary deck under e2e/.decks/zz-e2e-*, never decks/demo.
 
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';

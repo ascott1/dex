@@ -1,10 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 import { counter, current, demoDeckTests, expectSlide, open } from './navigation.ts';
-import { removeTempDecks, writeDeck } from './temp-deck.ts';
+import { DECKS_SHOWN, removeTempDecks, writeDeck } from './temp-deck.ts';
 
 test.describe('demo deck', () => demoDeckTests({ dev: true }));
 
-// Live reload uses a temporary deck under decks/zz-e2e-*, never decks/demo.
+// Live reload uses a temporary deck under e2e/.decks/zz-e2e-*, never decks/demo.
 test.describe.serial('live reload', () => {
   const slug = 'zz-e2e-live';
   const deckWith = (third: string) =>
@@ -93,7 +93,7 @@ test.describe.serial('live reload', () => {
     writeDeck(slug, '');
     await page.goto(`/#/${slug}`);
     await expect(page.getByText('No slides yet')).toBeVisible();
-    await expect(page.getByText(`decks/${slug}/deck.md`)).toBeVisible();
+    await expect(page.getByText(`${DECKS_SHOWN}/${slug}/deck.md`)).toBeVisible();
     await markPage(page);
     writeDeck(slug, '# Hello again');
     await expect(current(page)).toContainText('Hello again', { timeout: 10_000 });

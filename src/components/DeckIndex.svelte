@@ -1,5 +1,6 @@
 <script lang="ts">
   // The deck list at #/ (§9 Phase 3, task 1): bordered rows of title, slide count, modified date.
+  import { deckFile } from '../lib/paths';
   import { deck } from '../state/deck.svelte';
 
   const date = (iso: string) => (iso ? iso.slice(0, 10) : '');
@@ -13,7 +14,7 @@
 
   {#if deck.listLoaded && deck.list.length === 0}
     <p class="label empty">No decks yet</p>
-    <p class="help-text">Run <code>pnpm new &lt;slug&gt;</code> to create decks/&lt;slug&gt;/deck.md</p>
+    <p class="help-text">Run <code>pnpm new &lt;slug&gt;</code> to create {deckFile('<slug>')}</p>
   {:else}
     <ul class="rows">
       {#each deck.list as item (item.slug)}

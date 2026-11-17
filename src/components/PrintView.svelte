@@ -8,6 +8,7 @@
   //
   // POWERPOINT (§9 Phase 11) exports the same pages as a .pptx by measuring
   // them here, so it honours the same toggles, text size and theme.
+  import { deckFile } from '../lib/paths';
   import { stageSize } from '../lib/stage';
   import { deck } from '../state/deck.svelte';
   import { marks } from '../state/marks.svelte';
@@ -131,7 +132,7 @@
     {#if slides.length === 0}
       <div class="print-empty">
         <p class="label">No slides yet</p>
-        <p class="help-text">decks/{deck.current.slug}/deck.md</p>
+        <p class="help-text">{deckFile(deck.current.slug)}</p>
       </div>
     {:else}
       <div class="print-pages">

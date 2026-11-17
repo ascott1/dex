@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -31,17 +31,19 @@ describe('pnpm new', () => {
   let cwd = '';
   afterEach(() => { if (cwd) rmSync(cwd, { recursive: true, force: true }); });
 
-  const run = (...args: string[]) => spawnSync(process.execPath, [SCRIPT, ...args], { cwd, encoding: 'utf8' });
+  // DEX_DECKS is cleared, so the tests do not write to this machine's decks.
+  const run = (args: string[], env: Record<string, string> = {}) =>
+    spawnSync(process.execPath, [SCRIPT, ...args], { cwd, encoding: 'utf8', env: { ...process.env, DEX_DECKS: '', ...env } });
 
   it('creates the deck, then refuses to overwrite it', () => {
     cwd = realpathSync(mkdtempSync(path.join(tmpdir(), 'dex-new-')));
-    const first = run('scratch');
+    const first = run(['scratch']);
     expect(first.status).toBe(0);
     const file = path.join(cwd, 'decks', 'scratch', 'deck.md');
     expect(readFileSync(file, 'utf8')).toBe(starterDeck('scratch'));
     expect(existsSync(path.join(cwd, 'decks', 'scratch', 'media'))).toBe(true);
 
-    const second = run('scratch');
+    const second = run(['scratch']);
     expect(second.status).toBe(1);
     expect(second.stderr).toContain('decks/scratch/deck.md already exists');
     expect(readFileSync(file, 'utf8')).toBe(starterDeck('scratch'));
@@ -49,12 +51,27 @@ describe('pnpm new', () => {
 
   it('rejects a missing or invalid slug and writes nothing', () => {
     cwd = realpathSync(mkdtempSync(path.join(tmpdir(), 'dex-new-')));
-    expect(run().status).toBe(1);
+    expect(run([]).status).toBe(1);
     for (const bad of ['../x', 'a/b', 'Talk', '-x', 'a_b', '.']) {
-      const r = run(bad);
+      const r = run([bad]);
       expect(r.status, bad).toBe(1);
       expect(r.stderr).toContain('not a valid deck name');
     }
+    expect(existsSync(path.join(cwd, 'decks'))).toBe(false);
+  });
+
+  it('creates the deck in the folder DEX_DECKS names, from the environment or .env.local, and says where', () => {
+    cwd = realpathSync(mkdtempSync(path.join(tmpdir(), 'dex-new-')));
+    const mine = path.join(cwd, 'outside', 'my talks');
+    const first = run(['scratch'], { DEX_DECKS: mine });
+    expect(first.status).toBe(0);
+    expect(first.stdout).toContain('Created outside/my talks/scratch/deck.md');
+    expect(first.stdout).toContain('Put images in outside/my talks/scratch/media/');
+    expect(readFileSync(path.join(mine, 'scratch', 'deck.md'), 'utf8')).toBe(starterDeck('scratch'));
+
+    writeFileSync(path.join(cwd, '.env.local'), 'DEX_DECKS=from-file\n');
+    expect(run(['other']).status).toBe(0);
+    expect(existsSync(path.join(cwd, 'from-file', 'other', 'deck.md'))).toBe(true);
     expect(existsSync(path.join(cwd, 'decks'))).toBe(false);
   });
 });

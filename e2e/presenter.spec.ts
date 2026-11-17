@@ -1,7 +1,7 @@
 // Phase 8: the presenter window, speaker notes, the timer, blackout, and
 // keeping windows in step (PLAN.md §9 Phase 8). Two pages in one browser
 // context, because a BroadcastChannel only reaches same-origin pages of the
-// same context. Everything runs on a temporary deck under decks/zz-e2e-*, so
+// same context. Everything runs on a temporary deck under e2e/.decks/zz-e2e-*, so
 // decks/demo/marks.json is never written.
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';

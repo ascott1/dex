@@ -41,6 +41,20 @@ What this talk is about, in one line.
 
 Save, and the browser shows the change. A line of three dashes starts a new slide; the rest is ordinary Markdown.
 
+## Where your decks live
+
+Your decks are yours, not the project's. Everything in `decks/` except the demo is ignored by git, so a deck you make there is never committed or pushed, in this repository or in a fork of it. (To keep one in a fork anyway: `git add -f decks/talk`.)
+
+To keep them somewhere else, such as a folder of their own, a private repository, or a synced drive, name the folder in a file called `.env.local` at the top of the project:
+
+```sh
+DEX_DECKS=~/Talks
+```
+
+`.env.local` is ignored by git too, so each computer has its own. From then on `pnpm start`, `pnpm new`, `pnpm fonts`, and `pnpm build` all work in that folder, and updating dex is a `git pull` that never touches your decks. The demo stays in `decks/demo`; to open it while your decks are elsewhere, run `DEX_DECKS=decks pnpm start demo`.
+
+`pnpm build` puts every deck in the folder into `dist/`. If you publish `dist/`, you publish all of them.
+
 ## Writing slides
 
 A deck is `decks/<name>/deck.md`. Names use lowercase letters, digits, and hyphens. Put images anywhere inside the deck's folder; `media/` is the usual place.
@@ -206,7 +220,7 @@ You can also zoom with a trackpad pinch or `⌘`/`Ctrl` and the mouse wheel, and
 
 **Clickers.** Most presentation clickers send `PageDown`, `PageUp`, and `b` or `.`, which dex understands. Click once inside the deck window first so it has the keyboard.
 
-**Drawing and sticky notes.** Marks stay with their slide. While you run `pnpm start` they are saved to `decks/<name>/marks.json`, so you can commit them with the deck or delete the file to start clean. Settings has buttons to clear one slide or the whole deck.
+**Drawing and sticky notes.** Marks stay with their slide. While you run `pnpm start` they are saved to `decks/<name>/marks.json`, beside the deck, so they travel with it; delete the file to start clean. Settings has buttons to clear one slide or the whole deck.
 
 **Settings.** Press `s` for text size (Quiet for screen sharing, Regular for most rooms, Loud for big ones), builds, motion, and when the bars hide. Press `?` for every keyboard shortcut.
 

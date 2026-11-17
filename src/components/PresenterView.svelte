@@ -7,6 +7,7 @@
   import { untrack } from 'svelte';
   import type { Attachment } from 'svelte/attachments';
   import type { Deck, Slide } from '$shared/types';
+  import { deckFile } from '../lib/paths';
   import { session } from '../lib/session.svelte';
   import { stageSize } from '../lib/stage';
   import { deck } from '../state/deck.svelte';
@@ -139,7 +140,7 @@
   {:else if !current}
     <div class="empty">
       <p class="label">No slides yet</p>
-      <p class="help-text">decks/{deck.current.slug}/deck.md</p>
+      <p class="help-text">{deckFile(deck.current.slug)}</p>
     </div>
   {:else}
     <section class="main" aria-label="Current slide">

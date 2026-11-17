@@ -3,6 +3,7 @@
   // covers the stage area with a stage-shaped page, fitted the same way as the
   // stage, showing `slide.source` in DM Mono at 22 logical px inside the safe
   // area. The bars stay, so navigation keeps working and the source follows.
+  import { deckFile } from '../lib/paths';
   import { fitStage, stageSize } from '../lib/stage';
   import { deck } from '../state/deck.svelte';
   import { nav } from '../state/nav.svelte';
@@ -44,7 +45,7 @@
     >
       <div class="meta">
         <span class="tag">Markdown</span>
-        <span class="where">decks/{deck.current.slug}/deck.md:{slide.line}</span>
+        <span class="where">{deckFile(deck.current.slug)}:{slide.line}</span>
       </div>
       <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
       <pre tabindex="0">{slide.source}</pre>

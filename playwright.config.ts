@@ -1,6 +1,11 @@
+import { mkdirSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
+import { DECKS } from './e2e/temp-deck.ts';
 
 const PORT = 4319;
+
+// The folder the dev server watches has to be there when it starts; e2e/setup.ts fills it.
+mkdirSync(DECKS, { recursive: true });
 
 export default defineConfig({
   testDir: './e2e',
@@ -10,6 +15,7 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   reporter: 'list',
+  globalSetup: './e2e/setup.ts',
   globalTeardown: './e2e/teardown.ts',
   use: {
     baseURL: `http://localhost:${PORT}/`,
@@ -33,6 +39,8 @@ export default defineConfig({
   webServer: {
     // Plain vite, not `pnpm start`, so no browser tab opens on the machine.
     command: `vite --port ${PORT} --strictPort`,
+    // The tests' own decks, not this machine's (e2e/temp-deck.ts).
+    env: { DEX_DECKS: DECKS },
     url: `http://localhost:${PORT}/decks/index.json`,
     reuseExistingServer: false,
     timeout: 60_000,

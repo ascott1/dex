@@ -121,9 +121,12 @@ describe('loadFaces', () => {
 
 describe('pnpm fonts', () => {
   let cwd = '';
-  afterEach(() => { if (cwd) rmSync(cwd, { recursive: true, force: true }); });
+  afterEach(() => { if (cwd) rmSync(cwd, { recursive: true, force: true }); decksEnv = ''; });
 
-  const run = (...args: string[]) => spawnSync(process.execPath, [SCRIPT, ...args], { cwd, encoding: 'utf8' });
+  // DEX_DECKS is cleared unless a test sets it, so this machine's decks are never touched.
+  let decksEnv = '';
+  const run = (...args: string[]) =>
+    spawnSync(process.execPath, [SCRIPT, ...args], { cwd, encoding: 'utf8', env: { ...process.env, DEX_DECKS: decksEnv } });
   const setup = () => {
     cwd = realpathSync(mkdtempSync(path.join(tmpdir(), 'dex-fonts-')));
     const media = path.join(cwd, 'decks', 'talk', 'media');
@@ -152,6 +155,17 @@ describe('pnpm fonts', () => {
     expect(second.status).toBe(0);
     expect(second.stdout).toContain('decks/talk/media/flow.svg: DM Sans already embedded');
     expect(readFileSync(path.join(media, 'flow.svg'), 'utf8')).toBe(flow);
+  });
+
+  it('finds the deck in the folder DEX_DECKS names', () => {
+    const media = setup();
+    decksEnv = path.join(cwd, 'elsewhere');
+    mkdirSync(path.join(decksEnv, 'talk'), { recursive: true });
+    writeFileSync(path.join(decksEnv, 'talk', 'one.svg'), svg(`<text ${SANS}>one</text>`));
+    const r = run('talk');
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/^elsewhere\/talk\/one\.svg: embedded DM Sans/);
+    expect(readFileSync(path.join(media, 'flow.svg'), 'utf8')).not.toContain('<style');
   });
 
   it('takes file paths too', () => {

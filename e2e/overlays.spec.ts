@@ -2,7 +2,7 @@
 // view (PLAN.md §9 Phase 5). Demo deck facts as in smoke.spec.ts.
 
 import { expect, test, type Page } from '@playwright/test';
-import { removeTempDecks, writeDeck } from './temp-deck.ts';
+import { DECKS_SHOWN, removeTempDecks, writeDeck } from './temp-deck.ts';
 
 const COUNT = 23;
 const BULLETS = 4;      // `+` list, 3 steps
@@ -268,7 +268,7 @@ test.describe.serial('settings sheet with two decks', () => {
     await expect(page).toHaveURL(new RegExp(`#/${slug}/1$`));
     await expect(page.locator('.topbar .label')).toHaveText('Switched deck');
     await expect(sheet(page).locator('.row', { hasText: 'Slides' })).toContainText('2');
-    await expect(sheet(page).locator('.row', { hasText: 'Source' })).toContainText(`decks/${slug}/deck.md`);
+    await expect(sheet(page).locator('.row', { hasText: 'Source' })).toContainText(`${DECKS_SHOWN}/${slug}/deck.md`);
   });
 });
 

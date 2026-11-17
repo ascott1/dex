@@ -1,11 +1,11 @@
 // Integration tests: a real Vite dev server (and a real build) on a temporary
 // project folder, with the dex plugin pointed at its decks directory.
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { request } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { build, createLogger, createServer, type Logger, type ViteDevServer } from 'vite';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Deck, DeckSummary } from '../shared/types.ts';
 import { dex, MARKS_LIMIT } from './vite-plugin.ts';
 
@@ -149,7 +149,21 @@ describe('dex plugin in dev', () => {
   it('serves deck media through Vite', async () => {
     const res = await fetch(url('/decks/alpha/media/plate.svg'));
     expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('image/svg+xml');
     expect(await res.text()).toContain('<svg');
+  });
+
+  it('answers 404 for media that is not there, and never serves a file from outside the deck', async () => {
+    // Not index.html with a 200, which is what an <img> would otherwise be handed.
+    expect((await fetch(url('/decks/alpha/media/missing.png'))).status).toBe(404);
+    expect((await fetch(url('/decks/alpha/media'))).status).toBe(404);
+    writeFileSync(path.join(project.root, 'secret.txt'), 'secret');
+    for (const p of ['/decks/alpha/../../secret.txt', '/decks/alpha/%2e%2e%2f%2e%2e%2fsecret.txt', '/decks/alpha/..%2fbeta%2fdeck.md', '/decks/alpha/%E0%A4%A']) {
+      const res = await raw(port, 'GET', p);
+      expect(res.body, p).not.toContain('secret');
+      expect(res.body, p).not.toContain('# Beta');
+      expect([400, 404], p).toContain(res.status);
+    }
   });
 
   it('returns 404 for decks that do not exist or are not valid slugs', async () => {
@@ -288,6 +302,87 @@ describe('dex plugin in dev', () => {
     const res = await raw(port, 'PUT', '/__dex/marks/beta', `{"version":1,"slides":{},"pad":"${pad}"}`);
     expect(res.status).toBe(204);
     rmSync(path.join(project.decks, 'beta', 'marks.json'));
+  });
+});
+
+describe('a decks folder outside the project, named in .env.local', () => {
+  let root = '';
+  let decks = '';
+  let server: ViteDevServer | undefined;
+  let log: { logger: Logger; lines: string[] };
+  const infos: string[] = [];
+
+  beforeAll(() => {
+    // Whatever this machine has set, the file is what is read.
+    vi.stubEnv('DEX_DECKS', '');
+    root = realpathSync(mkdtempSync(path.join(tmpdir(), 'dex-plugin-root-')));
+    decks = realpathSync(mkdtempSync(path.join(tmpdir(), 'dex plugin decks-')));   // a space in the path, as a home folder may have
+    writeFileSync(path.join(root, 'index.html'), '<!doctype html><html><body><script type="module" src="./main.js"></script></body></html>');
+    writeFileSync(path.join(root, 'main.js'), 'console.log(__DEX_DECKS__);\n');
+    writeFileSync(path.join(root, '.env.local'), `# this machine's decks\nDEX_DECKS="${decks}"\n`);
+    mkdirSync(path.join(decks, 'talk', 'media'), { recursive: true });
+    writeFileSync(path.join(decks, 'talk', 'deck.md'), '# Talk\n\n![A plate](media/plate.svg)\n\n![Clip](<media/my clip.mp4>)\n');
+    writeFileSync(path.join(decks, 'talk', 'media', 'plate.svg'), SVG);
+    writeFileSync(path.join(decks, 'talk', 'media', 'my clip.mp4'), '0123456789');
+    log = capturingLogger();
+    log.logger.info = (msg) => { infos.push(msg); };
+  });
+
+  afterAll(async () => {
+    await server?.close();
+    vi.unstubAllEnvs();
+    rmSync(root, { recursive: true, force: true });
+    rmSync(decks, { recursive: true, force: true });
+  });
+
+  it('serves the decks and their media in dev, with content types and byte ranges', async () => {
+    server = await createServer({ root, configFile: false, customLogger: log.logger, server: { port: 0, open: false }, plugins: [dex()] });
+    await server.listen();
+    const addr = server.httpServer!.address();
+    const port = typeof addr === 'object' && addr ? addr.port : 0;
+    const url = (p: string) => `http://127.0.0.1:${port}${p}`;
+
+    expect(infos.join('\n')).toContain(`dex: decks are in ${decks}`);
+    const index = (await (await fetch(url('/decks/index.json'))).json()) as DeckSummary[];
+    expect(index.map((d) => d.slug)).toEqual(['talk']);
+    const deck = (await (await fetch(url('/decks/talk/deck.json'))).json()) as Deck;
+    expect(deck.assets).toEqual(['media/plate.svg', 'media/my clip.mp4']);
+    expect(log.lines).toEqual([]);
+
+    const svg = await fetch(url('/decks/talk/media/plate.svg'));
+    expect(svg.status).toBe(200);
+    expect(svg.headers.get('content-type')).toContain('image/svg+xml');
+    expect(await svg.text()).toBe(SVG);
+
+    // A video is fetched in ranges, which is how a browser seeks in it.
+    const clip = await fetch(url('/decks/talk/media/my%20clip.mp4'), { headers: { Range: 'bytes=2-5' } });
+    expect(clip.status).toBe(206);
+    expect(clip.headers.get('content-type')).toContain('video/mp4');
+    expect(await clip.text()).toBe('2345');
+
+    expect((await fetch(url('/decks/talk/media/missing.png'))).status).toBe(404);
+    // The app prints the real folder for a deck's files. In dev Vite hands a
+    // `define` to the page as a global, set by the env module its client imports.
+    const client = await (await fetch(url('/@vite/client'))).text();
+    const env = /import\s*["']([^"']*env\.mjs[^"']*)["']/.exec(client)?.[1];
+    expect(env).toBeTruthy();
+    expect(await (await fetch(url(env!))).text()).toContain(JSON.stringify(decks));
+
+    // Marks are written there too.
+    const put = await raw(port, 'PUT', '/__dex/marks/talk', '{"version":1,"slides":{}}', { 'content-type': 'application/json' });
+    expect(put.status).toBe(204);
+    expect(existsSync(path.join(decks, 'talk', 'marks.json'))).toBe(true);
+  });
+
+  it('builds them into decks/, and the built app prints decks/', async () => {
+    const outDir = path.join(root, 'dist');
+    await build({ root, configFile: false, logLevel: 'silent', build: { outDir }, plugins: [dex()] });
+    expect(readFileSync(path.join(outDir, 'decks', 'talk', 'media', 'plate.svg'), 'utf8')).toBe(SVG);
+    expect(existsSync(path.join(outDir, 'decks', 'talk', 'media', 'my clip.mp4'))).toBe(true);
+    const assets = path.join(outDir, 'assets');
+    const js = readdirSync(assets).filter((f) => f.endsWith('.js')).map((f) => readFileSync(path.join(assets, f), 'utf8')).join('');
+    expect(js).toMatch(/console\.log\(.decks.\)/);
+    expect(js).not.toContain(decks);
   });
 });
 

@@ -1,12 +1,13 @@
 // The dex Vite plugin: serves compiled decks in dev, watches deck.md files,
 // accepts marks writes, and emits the same JSON plus deck media in `vite build`.
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { readFile, readdir, rename, stat, writeFile } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
-import type { Logger, Plugin, ResolvedConfig, ViteDevServer } from 'vite';
+import { normalizePath, searchForWorkspaceRoot, type Logger, type Plugin, type ResolvedConfig, type ViteDevServer } from 'vite';
 import type { Deck, DeckSummary, DexErrorEvent, DexIndexEvent, DexUpdateEvent } from '../shared/types.ts';
 import { compileDeck, DexCompileError } from './compiler/index.ts';
+import { decksDir, showPath } from './decks-dir.mjs';
 
 export const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
 export const MARKS_LIMIT = 5 * 1024 * 1024;
@@ -14,9 +15,9 @@ export const MARKS_LIMIT = 5 * 1024 * 1024;
 export interface DexOptions {
   /**
    * The folder that holds the decks, absolute or relative to the Vite root.
-   * Default `decks`. Deck URLs are always `decks/<slug>/…`, and in dev media
-   * files are served by Vite's own static serving, so a folder other than
-   * `<root>/decks` gets its JSON served but not its media.
+   * Default: what `DEX_DECKS` names (in the environment or in `.env.local`,
+   * see decks-dir.mjs), else `decks`. It may be outside the project. Deck URLs
+   * are always `decks/<slug>/…`, wherever the folder is.
    */
   dir?: string;
 }
@@ -198,6 +199,8 @@ export function dex(options: DexOptions = {}): Plugin {
     return parts[0]!;
   }
 
+  const resolveDir = (root: string) => (options.dir ? path.resolve(root, options.dir) : decksDir(root));
+
   function isUnderDir(file: string): boolean {
     const rel = path.relative(dir, file);
     return rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel);
@@ -206,9 +209,23 @@ export function dex(options: DexOptions = {}): Plugin {
   return {
     name: 'dex',
 
+    config(user, { command }) {
+      const root = user.root ? path.resolve(user.root) : process.cwd();
+      const decks = resolveDir(root);
+      return {
+        // The path the app prints for a deck's files (src/lib/paths.ts). A built
+        // site holds its decks in `decks/`, wherever they were built from.
+        define: { __DEX_DECKS__: JSON.stringify(command === 'build' ? 'decks' : showPath(decks, root)) },
+        // Media is served from the decks folder through Vite's `/@fs/`, which
+        // refuses folders not listed here. Naming any folder drops Vite's
+        // default, the workspace root, so that is put back.
+        server: { fs: { allow: user.server?.fs?.allow ? [decks] : [searchForWorkspaceRoot(root), decks] } },
+      };
+    },
+
     configResolved(resolved) {
       config = resolved;
-      dir = path.resolve(resolved.root, options.dir ?? 'decks');
+      dir = resolveDir(resolved.root);
     },
 
     configureServer(server: ViteDevServer) {
@@ -216,6 +233,11 @@ export function dex(options: DexOptions = {}): Plugin {
       void discoverDecks(dir).then((s) => { known = new Set(s); });
       // Vite watches its root; this covers a decks folder outside it. Re-adding a watched path is a no-op.
       server.watcher.add(dir);
+      if (dir !== path.join(config.root, 'decks')) {
+        const shown = showPath(dir, config.root);
+        if (existsSync(dir)) config.logger.info(`dex: decks are in ${shown}`);
+        else config.logger.warn(`dex: the decks folder ${shown} does not exist yet; pnpm new <name> creates it`);
+      }
 
       async function refreshIndex(): Promise<void> {
         const now = await discoverDecks(dir);
@@ -300,6 +322,30 @@ export function dex(options: DexOptions = {}): Plugin {
             res.end(req.method === 'HEAD' ? undefined : body);
           }, next);
           return;
+        }
+
+        // Any other file of a deck: its media. The decks folder may be anywhere,
+        // so the request is handed to Vite's own file serving by its real path
+        // (`/@fs/`), which knows content types and byte ranges. A file that is
+        // not there is a 404 here; Vite would answer with index.html.
+        const mf = /^\/decks\/([^/]+)\/(.+)$/.exec(pathname);
+        if (mf && SLUG_RE.test(mf[1]!)) {
+          const deckDir = path.join(dir, mf[1]!);
+          let file: string;
+          try {
+            file = path.resolve(deckDir, decodeURIComponent(mf[2]!));
+          } catch {
+            sendJson(res, 400, { error: 'bad path' });
+            return;
+          }
+          if (!file.startsWith(deckDir + path.sep) || !statSync(file, { throwIfNoEntry: false })?.isFile()) {
+            sendJson(res, 404, { error: 'no such file' });
+            return;
+          }
+          const query = (req.url ?? '').includes('?') ? req.url!.slice(req.url!.indexOf('?')) : '';
+          const fsPath = encodeURI(normalizePath(file).replace(/^\//, '')).replace(/[?#]/g, encodeURIComponent);
+          req.url = `${base}/@fs/${fsPath}${query}`;
+          return next();
         }
 
         next();

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { clampCamera } from '../lib/camera';
+  import { deckFile } from '../lib/paths';
   import { clientToStage, fitStage, registerStageOverlay, stageSize } from '../lib/stage';
   import { attachZoom } from '../lib/zoom';
   import { deck } from '../state/deck.svelte';
@@ -122,7 +123,7 @@
   {#if deck.current && slides.length === 0}
     <div class="empty">
       <p class="label">No slides yet</p>
-      <p class="help-text">decks/{deck.current.slug}/deck.md</p>
+      <p class="help-text">{deckFile(deck.current.slug)}</p>
     </div>
   {/if}
 </main>

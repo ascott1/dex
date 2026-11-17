@@ -1,6 +1,7 @@
 <script module lang="ts">
   import { getCommand } from '../lib/commands';
   import { keyLabel } from '../lib/keys';
+  import { deckFile } from '../lib/paths';
 
   // The key that opens the keyboard-shortcuts screen, from the registry.
   const keysKey = keyLabel(getCommand('keys')?.keys[0] ?? '?');
@@ -256,7 +257,7 @@
         </div>
         <div class="row">
           <dt class="label">Source</dt>
-          <dd class="control-text path">decks/{current.slug}/deck.md</dd>
+          <dd class="control-text path" title={deckFile(current.slug)}>{deckFile(current.slug)}</dd>
         </div>
       </dl>
       <div class="buttons">

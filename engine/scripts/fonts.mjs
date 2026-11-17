@@ -1,9 +1,11 @@
 // `pnpm fonts <deck>` or `pnpm fonts <file.svg>...`: embed DM Sans and DM Mono in
 // SVG images, so their text is drawn in the deck's fonts on any computer.
 // See embed-fonts.mjs for why, and docs/images.md for when.
-// Decks live under the current directory, which is the project root when run through pnpm.
+// Decks live in `decks/` under the current directory, which is the project root when run
+// through pnpm, or in the folder DEX_DECKS names (engine/decks-dir.mjs).
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { decksDir, showPath } from '../decks-dir.mjs';
 import { embedFonts, loadFaces } from './embed-fonts.mjs';
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
@@ -37,10 +39,10 @@ for (const arg of args) {
     if (!existsSync(file) || !statSync(file).isFile()) fail(`${arg} does not exist.`);
     files.push(file);
   } else if (SLUG_RE.test(arg)) {
-    const deckDir = path.join(process.cwd(), 'decks', arg);
-    if (!existsSync(deckDir)) fail(`${path.join('decks', arg)} does not exist.`);
+    const deckDir = path.join(decksDir(), arg);
+    if (!existsSync(deckDir)) fail(`${showPath(deckDir)} does not exist.`);
     const found = svgsIn(deckDir);
-    if (found.length === 0) console.log(`${path.join('decks', arg)} has no SVG images.`);
+    if (found.length === 0) console.log(`${showPath(deckDir)} has no SVG images.`);
     files.push(...found);
   } else {
     fail(`"${arg}" is neither a deck name nor an .svg file.`);
@@ -51,7 +53,7 @@ const faces = loadFaces();
 const kb = (bytes) => `${Math.round(bytes / 1024)} KB`;
 
 for (const file of files) {
-  const shown = path.relative(process.cwd(), file);
+  const shown = showPath(file);
   const before = readFileSync(file, 'utf8');
   const { svg, families, missing } = embedFonts(before, faces);
   if (families.length === 0) {

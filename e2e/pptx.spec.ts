@@ -1,7 +1,7 @@
 // Phase 11: the PowerPoint export (PLAN.md §9 Phase 11). Each test presses the
 // print view's POWERPOINT button, reads the downloaded .pptx with the
 // store-only reader in unzip.ts, and parses its XML parts in the page with
-// DOMParser. Marks come from a temporary deck under decks/zz-e2e-*; the demo
+// DOMParser. Marks come from a temporary deck under e2e/.decks/zz-e2e-*; the demo
 // deck is exported with MARKS off, so nothing here depends on marks someone
 // drew on it.
 

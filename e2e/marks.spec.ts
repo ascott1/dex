@@ -1,6 +1,6 @@
 // Phase 6: drawing, sticky notes, the laser, and saving marks (PLAN.md §9
 // Phase 6). Everything that saves runs on a temporary deck under
-// decks/zz-e2e-*, so decks/demo/marks.json is never written.
+// e2e/.decks/zz-e2e-*, so decks/demo/marks.json is never written.
 
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

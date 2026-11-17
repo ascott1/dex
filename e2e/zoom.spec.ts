@@ -1,5 +1,5 @@
 // Phase 7: zoom and pan (PLAN.md §9 Phase 7). Runs on a temporary deck under
-// decks/zz-e2e-*, since some tests draw and place notes, which saves marks.
+// e2e/.decks/zz-e2e-*, since some tests draw and place notes, which saves marks.
 
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

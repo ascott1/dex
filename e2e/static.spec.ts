@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import type { Marks } from '../shared/types.ts';
 import { counter, current, demoDeckTests, open } from './navigation.ts';
-import { removeTempDecks } from './temp-deck.ts';
+import { DECKS, removeTempDecks } from './temp-deck.ts';
 import { unzip } from './unzip.ts';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -87,7 +87,10 @@ test.beforeAll(async () => {
   removeTempDecks();
   site = mkdtempSync(join(tmpdir(), 'dex-static-'));
   const out = join(site, SUBDIR);
-  execFileSync(process.execPath, [VITE, 'build', '--outDir', out, '--emptyOutDir', '--logLevel', 'error'], { cwd: ROOT });
+  execFileSync(process.execPath, [VITE, 'build', '--outDir', out, '--emptyOutDir', '--logLevel', 'error'], {
+    cwd: ROOT,
+    env: { ...process.env, DEX_DECKS: DECKS },
+  });
   writeFileSync(join(out, 'decks', 'demo', 'marks.json'), JSON.stringify(BUNDLED));
 
   preview = spawn(process.execPath, [VITE, 'preview', '--outDir', out, '--port', String(PREVIEW_PORT), '--strictPort'], {
